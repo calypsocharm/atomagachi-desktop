@@ -603,9 +603,15 @@
         }
     }
 
+    let localChatHistory = [];
     async function chatWithOllama(userText) {
         const petName = getPetName();
         say("[LOCAL UPLINK] Consulting local neural net...", 3000);
+        
+        // Push user thought to active short-term memory
+        localChatHistory.push({ role: 'user', content: userText });
+        if (localChatHistory.length > 20) localChatHistory = localChatHistory.slice(-20); // Prevent overflow
+        
         try {
             let memoryContext = "No custom memory files acquired yet.";
             const files = fs.readdirSync(brainDir).filter(f => f.endsWith('.md'));
@@ -624,18 +630,18 @@ Use the following Long-Term Memory files to give contextual answers if they are 
 ${memoryContext}
 ------------------`;
 
-            const res = await fetch(`http://localhost:11434/api/generate`, {
+            const res = await fetch(`http://localhost:11434/api/chat`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                    model: 'gemma4',
-                   prompt: userText,
-                   system: systemPrompt,
+                   messages: [ { role: 'system', content: systemPrompt }, ...localChatHistory ],
                    stream: false
                 })
             });
             const data = await res.json();
-            if(data.response) {
-                const aiText = data.response.trim();
+            if(data.message && data.message.content) {
+                const aiText = data.message.content.trim();
+                localChatHistory.push({ role: 'assistant', content: aiText });
                 say(aiText, Math.min(10000, 3000 + (aiText.length * 50)));
             } else {
                 say("[AI MODULE ERROR] Ollama returned an empty state.", 4000);
