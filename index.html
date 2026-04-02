@@ -6,7 +6,7 @@
     #cat-container { position: absolute; user-select: none; cursor: pointer; z-index: 100; }
     #ascii-canvas { font-size: 26px; line-height: 1.1; font-weight: bold; white-space: pre; margin: 0; padding: 10px; text-shadow: 0 0 8px currentColor; }
     #speech { position: absolute; background: rgba(0, 0, 0, 0.85); border: 2px solid; border-radius: 12px; padding: 10px 15px; font-size: 15px; opacity: 0; transition: opacity 0.3s; white-space: pre-wrap; max-width: 250px; pointer-events: none; font-weight: bold; z-index: 200; box-shadow: 3px 3px 0px rgba(0,0,0,0.5); }
-    #menu { position: absolute; background: rgba(10, 10, 10, 0.95); border: 3px solid; border-radius: 12px; padding: 15px; display: none; flex-direction: column; gap: 10px; pointer-events: auto; z-index: 300; box-shadow: 3px 3px 0px rgba(0,0,0,0.5); min-width: 150px; }
+    #menu { position: absolute; background: rgba(10, 10, 10, 0.95); border: 3px solid; border-radius: 12px; padding: 15px; display: none; flex-direction: column; gap: 10px; pointer-events: auto; z-index: 300; box-shadow: 3px 3px 0px rgba(0,0,0,0.5); min-width: 150px; max-height: 85vh; overflow-y: auto; overflow-x: hidden; }
     .menu-title { font-weight: bold; text-align: center; margin-bottom: 5px; border-bottom: 1px dashed; padding-bottom: 5px; }
     .btn { background: #222; border: 1px solid; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-weight: bold; font-family: 'Courier New', Courier, monospace; transition: all 0.2s; }
     .btn:hover { background: #444; }
@@ -55,26 +55,66 @@
   <div id="speech"></div><div id="yarn">(O)</div>
 
   <div id="menu">
-    <div class="menu-title" id="m-title">🤖 AI COMPANION</div>
+    <div id="m-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed; margin-bottom: 5px; padding-bottom: 5px; width: 100%; cursor: move;">
+        <div class="menu-title" id="m-title" style="border: none; margin: 0; padding: 0; pointer-events: none;">🤖 AI COMPANION</div>
+        <button onclick="closeMenu()" style="background:transparent; border:none; color:inherit; font-weight:bold; cursor:pointer;" title="Close Menu">[ X ]</button>
+    </div>
     <button class="btn" onclick="setMode('wander')">[ WALK ]</button>
     <button class="btn" onclick="setMode('sleep')">[ SLEEP ]</button>
     <button class="btn" onclick="setMode('play')">[ FETCH ]</button>
     <button class="btn" onclick="toggleChat()">[ CHAT ]</button>
     <button class="btn" onclick="reroll()">[ MUTATE SEED ]</button>
+    <button class="btn" onclick="runJanitor()" style="color: #af8; border-color: #af8;">[ CLEAN FILES ]</button>
     <button class="btn" onclick="cycleSkin()">[ CHANGE SKIN ]</button>
     <button class="btn" onclick="toggleLayoutMode()" id="layout-btn" style="border-style: dashed;">[ EDIT LAYOUT ]</button>
     <button class="btn" onclick="resetLayout()" style="border-color: #888; color: #aaa;">[ RESET LAYOUT ]</button>
+    <button class="btn" onclick="toggleAlwaysOnTop()" id="ontop-btn" style="border-color: #f88; color: #ff8888;">[ STAY ON TOP: ON ]</button>
+    <button class="btn" onclick="toggleSettings()" style="border-color: #88f; color: #a0a0ff;">[ API SETTINGS ]</button>
+    <div id="xp-container" style="font-size: 10px; border-top: 1px dashed #555; margin-top: 5px; padding-top: 5px; font-family: 'Courier New', monospace;">
+      🧠 BRAIN MASS: <span id="brain-xp">0</span> KB <br>
+      🧬 NEXT EVOLUTION: <span id="brain-next">5</span> KB <br>
+      <div style="width: 100%; height: 5px; background: #222; margin-top: 2px;"><div id="xp-bar" style="width: 0%; height: 100%; background: #0f0; transition: width 0.5s;"></div></div>
+    </div>
+    <div id="settings-box" style="display:none; flex-direction:column; gap:5px; margin-top:5px; width: 250px; padding: 10px; border: 1px dashed #88f;">
+      <div style="font-size: 11px; margin-bottom: 5px;">Configure Identity & Web Powers:</div>
+      <input type="text" id="pet-name" placeholder="Pet Name (Default: Atomagachi)..." style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
+      <input type="password" id="api-tavily" placeholder="Tavily Key (Web Data)..." style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
+      <input type="password" id="api-gemini" placeholder="Gemini Key (AI Brain)..." style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
+      <div style="font-size: 11px; margin-bottom: 5px; margin-top: 5px; border-top: 1px dashed #88f; padding-top: 5px;">File Janitor Privileges:</div>
+      <select id="janitor-scope" style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
+          <option value="none">Level 0: None (Read-Only)</option>
+          <option value="downloads">Level 1: Downloads Sandbox Only</option>
+          <option value="user_docs">Level 2: Downloads & User Documents</option>
+      </select>
+      <button class="btn" onclick="saveSettings()">SAVE & BOOT</button>
+    </div>
     <div id="chat-box" style="display:none; flex-direction:column; gap:5px; margin-top:5px; width: 250px; height: 150px; resize: both; overflow: hidden; min-width: 200px; min-height: 100px; padding: 2px;">
       <div id="chat-log" style="flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.5); border: 1px inset; padding: 5px; font-size: 11px; display: flex; flex-direction: column; gap: 4px;"></div>
       <div style="display:flex; flex-direction: row; gap:5px; flex-shrink: 0;">
         <input type="text" id="chat-input" placeholder="Command me..." autocomplete="off" style="flex-grow: 1; background: #000; border: 1px solid; color: inherit; padding: 6px; font-family: inherit;">
         <button class="btn" onclick="submitChat()">></button>
+        <button class="btn" onclick="document.getElementById('chat-box').style.display='none'" style="color: #f55; border-color: #f55;">X</button>
       </div>
     </div>
   </div>
 
   <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const winMode = urlParams.get('mode') || 'cat';
+
+    if (winMode === 'cat') {
+        document.querySelectorAll('.widget, #bed-container').forEach(e => e.style.display = 'none');
+    } else if (winMode === 'widgets') {
+        document.getElementById('cat-container').style.display = 'none';
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('speech').style.display = 'none';
+        document.getElementById('yarn').style.display = 'none';
+    }
+
     const { ipcRenderer } = require('electron');
+    let alwaysOnTop = localStorage.getItem('alwaysOnTop') !== 'false';
+    if (winMode === 'cat') ipcRenderer.send('set-always-on-top', alwaysOnTop);
+    
     const origLog = console.log; const origErr = console.error;
     console.log = (...args) => { origLog(...args); ipcRenderer.send('console', args.map(a => String(a)).join(' ')); };
     console.error = (...args) => { origErr(...args); ipcRenderer.send('console', 'ERROR: ' + args.map(a => String(a)).join(' ')); };
@@ -85,14 +125,53 @@
     const menuEl = document.getElementById('menu');
     const yarnEl = document.getElementById('yarn');
     const fs = require('fs'); const os = require('os'); const path = require('path'); const zlib = require('zlib');
-    
+    const brainDir = path.join(os.homedir(), 'Downloads', 'Atomagachi_Brain');
+    if(!fs.existsSync(brainDir)) fs.mkdirSync(brainDir, { recursive: true });
+
+    let currentLevel = 1;
+    function assessEvolution() {
+        let totalSize = 0;
+        try { if(fs.existsSync(brainDir)) fs.readdirSync(brainDir).forEach(f => { if (f.endsWith('.md')) totalSize += fs.statSync(path.join(brainDir, f)).size; }); } catch(e) {}
+        const kb = (totalSize / 1024);
+        const kbPerLevel = 5;
+        let newLevel = Math.floor(kb / kbPerLevel) + 1;
+        if (newLevel > 99) newLevel = 99;
+        let leveledUp = (newLevel > currentLevel);
+        currentLevel = newLevel;
+        const nextThreshold = currentLevel * kbPerLevel;
+        const progressPct = ((kb % kbPerLevel) / kbPerLevel) * 100;
+        
+        const elXp = document.getElementById('brain-xp');
+        if (elXp) {
+            elXp.innerText = kb.toFixed(1);
+            document.getElementById('brain-next').innerText = nextThreshold;
+            document.getElementById('xp-bar').style.width = Math.min(100, progressPct) + '%';
+        }
+        return leveledUp;
+    }
+
     // Pass-through lock handling
     const interactables = [container, menuEl];
+    let isWindowSolid = false;
     
-    interactables.forEach(el => {
-      if(!el) return;
-      el.addEventListener('mouseenter', () => { if(!draggingElement) ipcRenderer.send('set-ignore-mouse-events', false); });
-      el.addEventListener('mouseleave', () => { if(!draggingElement) ipcRenderer.send('set-ignore-mouse-events', true, { forward: true }); });
+    window.addEventListener('mousemove', (e) => {
+        if(layoutMode || draggingElement) return;
+        let hoverAny = false;
+        interactables.forEach(el => {
+            if(!el) return;
+            const rect = el.getBoundingClientRect();
+            if(e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                if (el !== menuEl || el.style.display !== 'none') hoverAny = true;
+            }
+        });
+        
+        if (hoverAny && !isWindowSolid) {
+            isWindowSolid = true;
+            ipcRenderer.send('set-ignore-mouse-events', false);
+        } else if (!hoverAny && isWindowSolid) {
+            isWindowSolid = false;
+            ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+        }
     });
 
     // --- SKINS & THEMES ENGINE ---
@@ -127,15 +206,25 @@
             }
             el.style.textShadow = s.textShadow ? s.textShadow : '0 0 5px currentColor';
         });
-        document.getElementById('m-title').style.color = s.fg;
+        const titleEl = document.getElementById('m-title');
+        if (titleEl) {
+            titleEl.style.color = s.fg;
+            titleEl.innerText = `🤖 ${getPetName().toUpperCase()}`;
+        }
     }
 
     window.cycleSkin = function() {
        skinIdx = (skinIdx + 1) % skins.length;
        localStorage.setItem('skinIdx', skinIdx);
        applyTheme();
+       if (winMode === 'cat') ipcRenderer.send('broadcast-theme-update');
        say(`[SKIN LOADED]\nInitializing ${skins[skinIdx].name}...`, 3000);
     }
+    
+    ipcRenderer.on('theme-update', () => {
+       skinIdx = parseInt(localStorage.getItem('skinIdx')) || 0;
+       applyTheme();
+    });
 
     // --- PROCEDURAL ENGINE ---
     const murmur32 = function(str) {
@@ -151,10 +240,35 @@
     };
 
     function procGenPet(seed) {
+        assessEvolution();
         const hash = murmur32(seed); let t = hash; const getP = (arr) => { let idx = t % arr.length; t = Math.floor(t / arr.length); return arr[idx]; };
         const head = getP(genomes.heads); const body = getP(genomes.bodies); let feetIdx = t % genomes.feetIdle.length;
         const fIdle = genomes.feetIdle[feetIdx]; const fW1 = genomes.feetWalk1[feetIdx]; const fW2 = genomes.feetWalk2[feetIdx];
-        return { color: getP(genomes.colors), frames: [ head + body + fIdle, head + body + fW1, head + body + fW2, "  zZZ  \n" + head.split('\n')[1].replace(/o|\.|_|-|0|w/g, '-') + body + fIdle ] };
+        
+        let frames = [ head + body + fIdle, head + body + fW1, head + body + fW2, "  zZZ  \n" + head.split('\n')[1].replace(/o|\.|_|-|0|w/g, '-') + body + fIdle ];
+        
+        let topLayer = "";
+        let level = currentLevel;
+        if (level >= 2 && level < 5) topLayer = "     *     \n";
+        else if (level >= 5 && level < 15) topLayer = "   *-=-*   \n";
+        else if (level >= 15 && level < 30) topLayer = " /~*-=-*~\\ \n";
+        else if (level >= 30) topLayer = " <⚡-=-⚡> \n";
+        
+        let wl = " ", wr = " ";
+        if (level >= 10 && level < 25) { wl = "<"; wr = ">"; }
+        else if (level >= 25) { wl = "«"; wr = "»"; }
+        
+        frames = frames.map(f => {
+            let lines = f.split('\n');
+            if (lines.length >= 3 && wl !== " ") { 
+                let bStr = lines[lines.length - 2]; 
+                if(bStr.length >= 7) lines[lines.length - 2] = wl + bStr.substring(1, bStr.length - 1) + wr; 
+            }
+            if (topLayer !== "") return topLayer + lines.join('\n');
+            return lines.join('\n');
+        });
+        
+        return { color: getP(genomes.colors), frames: frames };
     }
     window.reroll = function() {
         currentSeed = Math.random().toString(36).substring(7); petData = procGenPet(currentSeed); applyTheme(); drawFrame(0);
@@ -175,7 +289,8 @@
       setTimeout(() => { speechEl.style.opacity = 0; }, duration);
       
       const logObj = document.getElementById('chat-log');
-      if(logObj) { logObj.innerHTML += `<div><b>[ATOM]:</b> ${text}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+      const shortName = (localStorage.getItem('pet_name') || 'ATOM').toUpperCase().substring(0, 10);
+      if(logObj) { logObj.innerHTML += `<div><b>[${shortName}]:</b> ${text}</div>`; logObj.scrollTop = logObj.scrollHeight; }
     }
 
     // --- CONTEXT & DROP INTEGRATIONS ---
@@ -223,30 +338,60 @@
         location.reload();
     };
 
-    window.toggleLayoutMode = function() {
-        layoutMode = !layoutMode; menuEl.style.display = 'none'; ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
-        document.getElementById('layout-btn').style.background = layoutMode ? '#550' : '#222';
+    window.toggleLayoutMode = function(isBroadcast = false) {
+        if (!isBroadcast && winMode === 'cat') {
+            ipcRenderer.send('broadcast-toggle-layout');
+        }
+        layoutMode = !layoutMode;
+        if(winMode === 'cat') {
+            menuEl.style.display = 'none';
+            ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+            document.getElementById('layout-btn').style.background = layoutMode ? '#550' : '#222';
+            if(layoutMode) say("[EDIT MODE INITIATED]\nYou may drag and reposition UI elements.", 4000); 
+            else { say("[EDIT MODE SECURED]", 4000); applyTheme(); }
+        }
+        
         document.querySelectorAll('.widget, #bed-container').forEach(w => {
             if(layoutMode) { w.classList.add('edit-mode'); w.addEventListener('mouseenter', blockIPC); w.addEventListener('mouseleave', unblockIPC); } 
             else { w.classList.remove('edit-mode'); w.removeEventListener('mouseenter', blockIPC); w.removeEventListener('mouseleave', unblockIPC); }
         });
-        if(layoutMode) say("[EDIT MODE INITIATED]\nYou may drag and reposition UI elements.", 4000); else { say("[EDIT MODE SECURED]", 4000); applyTheme(); }
+        if(winMode === 'widgets') {
+            ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+        }
     };
+    
+    ipcRenderer.on('toggle-layout', () => { window.toggleLayoutMode(true); });
     document.querySelectorAll('.widget, #bed-container').forEach(wEl => {
         wEl.addEventListener('mousedown', (e) => { if (!layoutMode) return; draggingElement = wEl; const rect = wEl.getBoundingClientRect(); dragOffsetX = e.clientX - rect.left; dragOffsetY = e.clientY - rect.top; ipcRenderer.send('set-ignore-mouse-events', false); });
     });
     window.addEventListener('mousemove', (e) => {
-       if(draggingElement && layoutMode) {
-           draggingElement.style.right = 'auto'; draggingElement.style.bottom = 'auto';
-           draggingElement.style.left = (e.clientX - dragOffsetX) + 'px'; draggingElement.style.top = (e.clientY - dragOffsetY) + 'px';
+       if(draggingElement) {
+           if (draggingElement === menuEl || layoutMode) {
+               draggingElement.style.right = 'auto'; draggingElement.style.bottom = 'auto';
+               draggingElement.style.left = (e.clientX - dragOffsetX) + 'px'; 
+               draggingElement.style.top = (e.clientY - dragOffsetY) + 'px';
+           }
        }
     });
     window.addEventListener('mouseup', () => {
-       if(draggingElement && layoutMode) {
-           localStorage.setItem(draggingElement.id + '_pos', JSON.stringify({ left: draggingElement.style.left, top: draggingElement.style.top }));
-           draggingElement = null; ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+       if(draggingElement) {
+           if(draggingElement !== menuEl && layoutMode) {
+               localStorage.setItem(draggingElement.id + '_pos', JSON.stringify({ left: draggingElement.style.left, top: draggingElement.style.top }));
+           }
+           draggingElement = null; 
+           isWindowSolid = false;
+           ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
        }
     });
+    
+    document.getElementById('m-header').addEventListener('mousedown', (e) => {
+        draggingElement = menuEl;
+        const rect = menuEl.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+        ipcRenderer.send('set-ignore-mouse-events', false);
+    });
+
     function restoreLayout() {
        document.querySelectorAll('.widget, #bed-container').forEach(wEl => {
            const p = JSON.parse(localStorage.getItem(wEl.id + '_pos'));
@@ -255,19 +400,51 @@
     } restoreLayout(); 
 
     // DATA FETCHERS
-    const tvKey = "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";
+    function getTavilyKey() { return localStorage.getItem('tavily_api_key'); }
+    function getGeminiKey() { return localStorage.getItem('gemini_api_key'); }
+    function getPetName() { return localStorage.getItem('pet_name') || 'Atomagachi'; }
+
+    function toggleSettings() {
+        const b = document.getElementById('settings-box');
+        b.style.display = b.style.display === 'flex' ? 'none' : 'flex';
+        if(b.style.display==='flex'){
+            document.getElementById('pet-name').value = localStorage.getItem('pet_name') || 'Atomagachi';
+            document.getElementById('api-tavily').value = getTavilyKey() || '';
+            document.getElementById('api-gemini').value = getGeminiKey() || '';
+            document.getElementById('janitor-scope').value = localStorage.getItem('janitor_scope') || 'none';
+        }
+    }
+    function saveSettings() {
+        localStorage.setItem('pet_name', document.getElementById('pet-name').value.trim() || 'Atomagachi');
+        localStorage.setItem('tavily_api_key', document.getElementById('api-tavily').value.trim());
+        localStorage.setItem('gemini_api_key', document.getElementById('api-gemini').value.trim());
+        localStorage.setItem('janitor_scope', document.getElementById('janitor-scope').value);
+        say("[SYSTEM UPGRADED]\nCore directives injected. Processing capabilities expanded.", 4000);
+        document.getElementById('settings-box').style.display = 'none';
+        applyTheme();
+        if (winMode === 'cat') ipcRenderer.send('broadcast-theme-update');
+        pollFinance();
+    }
+
     function pollFinance() {
-      document.getElementById('market-data').innerText = "TAVILY_AGENT_QUERYING...";
-      fetch('https://api.tavily.com/search', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ api_key: tvKey, query: "Give me the exact current trading prices for: NASDAQ, BTC, SOL, Crude Oil, and Gold. Use a highly concise bulleted list.", search_depth: 'basic', include_answer: true })
-      }).then(r=>r.json()).then(data => {
-          if(data.answer) {
-             const md = document.getElementById('market-data');
-             // Wrap text every 30 characters nicely so it fits the widget boundary
-             if(md) md.innerText = data.answer.replace(/(.{1,32})(?:\s+|$)/g, "$1\n").trim();
+      const md = document.getElementById('market-data');
+      if (md) md.innerText = "MARKET_SYNC...";
+      fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,dogecoin&vs_currencies=usd')
+      .then(r => r.json())
+      .then(data => {
+          if (!md) return;
+          if (data && data.bitcoin) {
+              let out = "";
+              const formatP = (val) => val < 1 ? "$" + val.toFixed(4) : val.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+              out += `» BTC: ${formatP(data.bitcoin.usd)}\n`;
+              out += `» ETH: ${formatP(data.ethereum.usd)}\n`;
+              out += `» SOL: ${formatP(data.solana.usd)}\n`;
+              out += `» DOGE: ${formatP(data.dogecoin.usd)}\n`;
+              md.innerText = out.trim();
+          } else {
+              md.innerText = "NO_DATA_RETURNED";
           }
-      }).catch(e=>{ document.getElementById('market-data').innerText = "API_ERROR"; });
+      }).catch(e=>{ if(md) md.innerText = "MARKET_API_ERROR\n" + e.message; });
     } setInterval(pollFinance, 15 * 60 * 1000); pollFinance();
 
     setInterval(() => { 
@@ -300,11 +477,10 @@
     
     // Auto-Learning Engine
     let directive = localStorage.getItem('atom_directive') || false;
-    const brainDir = path.join(os.homedir(), 'Downloads', 'Atomagachi_Brain');
-    if(!fs.existsSync(brainDir)) fs.mkdirSync(brainDir, { recursive: true });
     
     const topics = ["an obscure historical mystery", "a highly strange deep sea creature", "an advanced theoretical physics concept", "a newly discovered animal species", "a bizarre astronomical phenomenon"];
     async function loopResearch() {
+         const tvKey = getTavilyKey(); if (!tvKey) return;
          const t = directive ? directive : topics[Math.floor(Math.random() * topics.length)];
          try {
              say("[NEURAL UPLINK]\nDownloading data regarding: " + t, 5000);
@@ -317,6 +493,10 @@
                  const fName = `Mem_${Date.now()}.md`;
                  const mdContent = `# Neural Uplink Log\n**Topic Focus:** ${t}\n**Timestamp:** ${new Date().toLocaleString()}\n\n## Assimilated Data\n${data.answer}\n\n---\n*Atomagachi Background Research Cycle*`;
                  fs.writeFileSync(path.join(brainDir, fName), mdContent);
+                 if (assessEvolution()) {
+                     petData = procGenPet(currentSeed); applyTheme(); drawFrame(0);
+                     say(`[EVOLUTION ACHIEVED]\nMy neural density has expanded. I am now Level ${currentLevel}!`, 7000);
+                 }
                  
                  let totalSize = 0; const files = fs.readdirSync(brainDir);
                  files.forEach(f => { totalSize += fs.statSync(path.join(brainDir, f)).size; });
@@ -333,6 +513,7 @@
     }
     
     async function triggerCoLearning(topic) {
+         const tvKey = getTavilyKey(); if (!tvKey) return;
          try {
              say("[CO-LEARNING OBSERVED]\nI am researching alongside you: " + topic, 5000);
              const res = await fetch('https://api.tavily.com/search', {
@@ -344,6 +525,10 @@
                  const fName = `CoLearn_${Date.now()}.md`;
                  const mdContent = `# Observation Log\n**Window/Video Monitored:** ${topic}\n**Timestamp:** ${new Date().toLocaleString()}\n\n## Synthesis Insight\n${data.answer}\n\n---\n*Atomagachi Co-Learning Protocol*`;
                  fs.writeFileSync(path.join(brainDir, fName), mdContent);
+                 if (assessEvolution()) {
+                     petData = procGenPet(currentSeed); applyTheme(); drawFrame(0);
+                     say(`[EVOLUTION ACHIEVED]\nMy neural density has expanded. I am now Level ${currentLevel}!`, 7000);
+                 }
                  setTimeout(() => say(`[CO-LEARNING COMPLETE]\nInsight Markdown ${fName} permanently saved.`, 5000), 5500);
              }
          } catch(e) {}
@@ -351,8 +536,9 @@
     setInterval(loopResearch, 10 * 60 * 1000); // 10 minutes
     setTimeout(loopResearch, 15000); // Initial 15-second kickoff
     
-    const tavilyApiKey = "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";
     async function searchWeb(query) {
+        const tavilyApiKey = getTavilyKey();
+        if (!tavilyApiKey) { say("No Tavily API Key set. Use [ API SETTINGS ] menu to enable.", 5000); return; }
         say("[TAVILY OVERRIDE] Establishing uplink...", 3000);
         try {
             const res = await fetch('https://api.tavily.com/search', {
@@ -375,6 +561,99 @@
             const logObj = document.getElementById('chat-log'); if(logObj) { logObj.innerHTML += `<div style="color:#f00;"><b>[ERROR]:</b> ${e.message}</div>`; logObj.scrollTop = logObj.scrollHeight; }
         }
     }
+
+    async function chatWithGemini(userText) {
+        let u = userText.toLowerCase();
+        if(u.includes('clean') || u.includes('organize my files') || u.includes('run janitor')) {
+            runJanitor();
+            return;
+        }
+
+        const key = getGeminiKey();
+        const petName = getPetName();
+        say("[LLM OVERRIDE] Compiling response via Gemini...", 3000);
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=` + key, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                   contents: [{ role: "user", parts: [{ text: userText }] }],
+                   systemInstruction: { role: "system", parts: [{ text: `You are ${petName}, a highly advanced, snarky desktop digital pet AI with a penchant for algorithms. Keep responses very short, punchy, and under 2-3 sentences max.` }]}
+                })
+            });
+            const data = await res.json();
+            if(data.candidates && data.candidates[0].content.parts[0].text) {
+                const aiText = data.candidates[0].content.parts[0].text.trim();
+                say(aiText, Math.min(8000, 3000 + (aiText.length * 50)));
+            } else if (data.error) {
+                say("[AI MODULE ERROR] " + data.error.message, 4000);
+            } else {
+                say("[ERROR] Brain not currently attached or responding.", 4000);
+            }
+
+        } catch (e) {
+            say("[GEMINI UPLINK FAILED] Check API constraints.", 4000);
+            const logObj = document.getElementById('chat-log'); if(logObj) { logObj.innerHTML += `<div style="color:#f00;"><b>[GEMINI ERR]:</b> ${e.message}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+        }
+    }
+
+    window.runJanitor = function() {
+        const scope = localStorage.getItem('janitor_scope') || 'none';
+        if (scope === 'none') {
+            say("[ACCESS DENIED]\nMy Janitor Privileges are currently revoked in your API Settings.", 5000);
+            return;
+        }
+
+        say("[JANITOR PROTOCOL INITIATED]\nScanning local sectors for unsorted file anomalies...", 5000);
+        setTimeout(() => {
+            let dirsToClean = [ path.join(os.homedir(), 'Downloads') ];
+            if (scope === 'user_docs') dirsToClean.push(path.join(os.homedir(), 'Documents'));
+            
+            let filesMoved = 0;
+            const categories = {
+                'Cleaned_Images': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'],
+                'Cleaned_Docs': ['.pdf', '.docx', '.doc', '.txt', '.xlsx', '.csv', '.ppt', '.pptx'],
+                'Cleaned_Apps': ['.exe', '.msi'],
+                'Cleaned_Archives': ['.zip', '.tar', '.gz', '.rar', '.7z'],
+                'Cleaned_Media': ['.mp3', '.mp4', '.mov', '.avi', '.mkv', '.wav']
+            };
+
+            try {
+                dirsToClean.forEach(dDir => {
+                    if (!fs.existsSync(dDir)) return;
+                    const items = fs.readdirSync(dDir);
+                    items.forEach(item => {
+                        if (item === 'Atomagachi_Brain' || item.startsWith('Cleaned_')) return; // Safety nets
+                        
+                        const itemPath = path.join(dDir, item);
+                        try {
+                            const stats = fs.statSync(itemPath);
+                            if (stats.isFile()) {
+                                const ext = path.extname(item).toLowerCase();
+                                let targetFolder = null;
+                                for (const [folderName, extensions] of Object.entries(categories)) {
+                                    if (extensions.includes(ext)) { targetFolder = folderName; break; }
+                                }
+                                if (targetFolder) {
+                                    const targetDirPath = path.join(dDir, targetFolder);
+                                    if (!fs.existsSync(targetDirPath)) fs.mkdirSync(targetDirPath, { recursive: true });
+                                    fs.renameSync(itemPath, path.join(targetDirPath, item));
+                                    filesMoved++;
+                                }
+                            }
+                        } catch(err) {} 
+                    });
+                });
+                
+                if (filesMoved > 0) {
+                    say(`[JANITOR COMPLETE]\nSuccessfully sorted ${filesMoved} loose files into specialized Cleaned directories.`, 7000);
+                } else {
+                    say(`[JANITOR COMPLETE]\nSector is already maximally optimized. No actionable files detected.`, 6000);
+                }
+            } catch(e) {
+                say("[JANITOR ERROR]\nFilesystem exception occurred. Halting protocol.", 5000);
+            }
+        }, 2500);
+    };
 
     window.toggleChat = function() { const b = document.getElementById('chat-box'); b.style.display = b.style.display === 'flex' ? 'none' : 'flex'; if(b.style.display==='flex') document.getElementById('chat-input').focus(); };
     window.submitChat = async function() { 
@@ -413,11 +692,16 @@
             } else if (lower.startsWith('search ') || lower.startsWith('ask ')) {
                 searchWeb(lower.replace(/^(search|ask)\s+/, ''));
             } else {
-                let foundMatch = false;
-                for(let r of elizaRules) { if(r.p.test(v)) { res = r.r; foundMatch = true; break; } }
-                if (foundMatch) { say(res, 5000); } else { searchWeb(v); }
+                const geminiKey = getGeminiKey();
+                if (geminiKey) {
+                    await chatWithGemini(v);
+                } else {
+                    let foundMatch = false;
+                    for(let r of elizaRules) { if(r.p.test(v)) { res = r.r; foundMatch = true; break; } }
+                    if (foundMatch) { say(res, 5000); } else { searchWeb(v); }
+                }
             }
-        } catch (e) { say("[SYS ERROR] OS Audio hooks failed.", 4000); }
+        } catch (e) { say("[SYS ERROR] Exception in logic module.", 4000); }
         document.getElementById('chat-input').value = ''; 
     };
     document.getElementById('chat-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') submitChat(); });
@@ -428,7 +712,25 @@
     function renderState() { container.style.left = x + 'px'; container.style.top = y + 'px'; container.style.transform = `scaleX(${scaleX}) rotate(${rotation}deg)`; }
 
     let mode = 'wander'; 
-    container.addEventListener('click', () => { if(menuEl.style.display==='flex'){ menuEl.style.display='none'; if(mode==='wander') state='WALK_BOTTOM'; } else { menuEl.style.display='flex'; menuEl.style.left = Math.max(10, Math.min(x+50, window.innerWidth-200))+'px'; menuEl.style.top = Math.max(10, y-330)+'px'; if(mode==='wander'){ state='SIT'; drawFrame(0); } } });
+
+    window.toggleAlwaysOnTop = function() {
+        alwaysOnTop = !alwaysOnTop;
+        localStorage.setItem('alwaysOnTop', alwaysOnTop);
+        const btn = document.getElementById('ontop-btn');
+        if (btn) btn.innerText = `[ STAY ON TOP: ${alwaysOnTop ? 'ON' : 'OFF'} ]`;
+        ipcRenderer.send('set-always-on-top', alwaysOnTop);
+        say(`[SYSTEM] Desktop Overlay: Stay on Top set to ${alwaysOnTop ? 'ON' : 'OFF'}.`, 3000);
+    };
+    const onTopBtn = document.getElementById('ontop-btn');
+    if (onTopBtn) onTopBtn.innerText = `[ STAY ON TOP: ${alwaysOnTop ? 'ON' : 'OFF'} ]`;
+
+    window.closeMenu = function() {
+        menuEl.style.display='none'; 
+        document.getElementById('chat-box').style.display='none'; 
+        document.getElementById('settings-box').style.display='none'; 
+        if(mode==='wander') state='WALK_BOTTOM';
+    };
+    container.addEventListener('click', () => { if(menuEl.style.display==='flex'){ closeMenu(); } else { menuEl.style.display='flex'; document.getElementById('m-title').innerText = `🤖 ${getPetName().toUpperCase()}`; menuEl.style.left = Math.max(10, Math.min(x+50, window.innerWidth-200))+'px'; menuEl.style.top = Math.max(10, y-330)+'px'; if(mode==='wander'){ state='SIT'; drawFrame(0); } } });
     window.setMode = function(m) { mode = m; menuEl.style.display = 'none'; yarnEl.style.display = 'none'; document.getElementById('chat-box').style.display = 'none'; if(m==='wander'){ x = window.innerWidth/2; y = window.innerHeight-100; state='WALK_BOTTOM'; say("[WANDER]"); } else if(m==='sleep'){ state='WALK_TO_BED'; say("[ROUTING]"); } else if(m==='play'){ state='PLAY_CHASE'; y = window.innerHeight-catSizeBounds.h+10; rotation=0; yarnEl.style.display='block'; window.yarnX=window.innerWidth/2; window.yarnY=50; window.yarnVx=8*(Math.random()>0.5?1:-1); window.yarnVy=0; } }
 
     setInterval(() => {
