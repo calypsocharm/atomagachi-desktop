@@ -1,32 +1,297 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; overflow: hidden; background-color: transparent !important; font-family: 'Courier New', Courier, monospace; width: 100vw; height: 100vh; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; overflow: hidden; background: transparent !important; font-family: 'Inter', sans-serif; width: 100vw; height: 100vh; }
+
+    /* === CAT === */
     #cat-container { position: absolute; user-select: none; cursor: pointer; z-index: 100; }
-    #ascii-canvas { font-size: 26px; line-height: 1.1; font-weight: bold; white-space: pre; margin: 0; padding: 10px; text-shadow: 0 0 8px currentColor; }
-    #speech { position: absolute; background: rgba(0, 0, 0, 0.85); border: 2px solid; border-radius: 12px; padding: 10px 15px; font-size: 15px; opacity: 0; transition: opacity 0.3s; white-space: pre-wrap; max-width: 250px; pointer-events: none; font-weight: bold; z-index: 200; box-shadow: 3px 3px 0px rgba(0,0,0,0.5); }
-    #menu { position: absolute; background: rgba(10, 10, 10, 0.95); border: 3px solid; border-radius: 12px; padding: 15px; display: none; flex-direction: column; gap: 10px; pointer-events: auto; z-index: 300; box-shadow: 3px 3px 0px rgba(0,0,0,0.5); min-width: 150px; max-height: 85vh; overflow-y: auto; overflow-x: hidden; }
-    .menu-title { font-weight: bold; text-align: center; margin-bottom: 5px; border-bottom: 1px dashed; padding-bottom: 5px; }
-    .btn { background: #222; border: 1px solid; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-weight: bold; font-family: 'Courier New', Courier, monospace; transition: all 0.2s; }
-    .btn:hover { background: #444; }
-    #chat-box { display: none; flex-direction: row; gap: 5px; margin-top: 5px; }
-    #chat-input { background: #000; border: 1px solid; padding: 6px; width: 140px; font-family: 'Courier New', Courier, monospace; outline: none; }
-    #yarn { position: absolute; font-size: 30px; display: none; pointer-events: none; color: #ff3333; text-shadow: 0 0 5px red; }
+    #ascii-canvas { font-size: 26px; line-height: 1.1; font-weight: bold; white-space: pre; margin: 0; padding: 10px; text-shadow: 0 0 12px currentColor; font-family: 'Courier New', monospace; }
 
-    /* WIDGETS */
-    .widget { position: absolute; background: rgba(10, 10, 10, 0.7); border: 1px dashed; padding: 10px; font-weight: bold; pointer-events: none; z-index: 50; text-shadow: 0 0 5px currentColor; }
-    #bed-container { position: absolute; font-size: 20px; font-weight: bold; pointer-events: none; z-index: 40; text-shadow: 0 0 5px currentColor; }
+    /* === SPEECH BUBBLE === */
+    #speech {
+      position: absolute;
+      background: rgba(15, 15, 25, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 16px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #e2e8f0;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      white-space: pre-wrap;
+      max-width: 280px;
+      pointer-events: none;
+      z-index: 200;
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    /* === MENU PANEL === */
+    #menu {
+      position: absolute;
+      background: rgba(10, 10, 20, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 20px;
+      padding: 18px 16px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+      z-index: 300;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+      min-width: 220px;
+      max-height: 90vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    #menu::-webkit-scrollbar { width: 3px; }
+    #menu::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.4); border-radius: 99px; }
+
+    .menu-title {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-align: center;
+      color: #c4b5fd;
+      text-transform: uppercase;
+    }
+
+    /* === BUTTONS === */
+    .btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      color: #cbd5e1;
+      letter-spacing: 0.03em;
+      transition: all 0.18s ease;
+      text-align: left;
+      width: 100%;
+    }
+    .btn:hover {
+      background: rgba(139,92,246,0.18);
+      border-color: rgba(139,92,246,0.5);
+      color: #fff;
+      transform: translateX(2px);
+    }
+    .btn-accent {
+      background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(59,130,246,0.15));
+      border-color: rgba(139,92,246,0.4);
+      color: #c4b5fd;
+    }
+    .btn-accent:hover {
+      background: linear-gradient(135deg, rgba(139,92,246,0.4), rgba(59,130,246,0.25));
+      color: #fff;
+    }
+    .btn-danger {
+      border-color: rgba(239,68,68,0.3);
+      color: #fca5a5;
+    }
+    .btn-danger:hover {
+      background: rgba(239,68,68,0.15);
+      border-color: rgba(239,68,68,0.6);
+      color: #fff;
+    }
+    .btn-green {
+      border-color: rgba(52,211,153,0.3);
+      color: #6ee7b7;
+    }
+    .btn-green:hover {
+      background: rgba(52,211,153,0.12);
+      border-color: rgba(52,211,153,0.5);
+      color: #fff;
+    }
+
+    /* === SECTION DIVIDER === */
+    .menu-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent);
+      margin: 4px 0;
+      border: none;
+    }
+    .menu-section-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.5);
+      padding: 0 2px;
+      margin-top: 2px;
+    }
+
+    /* === CHAT BOX === */
+    #chat-box {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 10px;
+      width: 85vw;
+      height: 75vh;
+      max-width: 1400px;
+      max-height: 900px;
+      min-width: 300px;
+      min-height: 200px;
+      resize: both;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid rgba(139,92,246,0.3);
+      background: rgba(5, 5, 15, 0.85);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 0 40px rgba(139,92,246,0.12);
+    }
+    #chat-log {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.7;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      color: #e2e8f0;
+    }
+    #chat-log::-webkit-scrollbar { width: 4px; }
+    #chat-log::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.35); border-radius: 99px; }
+    #chat-log div { animation: fadeInMsg 0.25s ease; }
+    @keyframes fadeInMsg { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .chat-input-row {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      padding: 12px 16px;
+      background: rgba(15,15,30,0.9);
+      border-top: 1px solid rgba(139,92,246,0.15);
+      flex-shrink: 0;
+    }
+    #chat-input {
+      flex-grow: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 10px;
+      color: #e2e8f0;
+      padding: 10px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #chat-input:focus {
+      border-color: rgba(139,92,246,0.6);
+      background: rgba(139,92,246,0.05);
+    }
+    #chat-input::placeholder { color: rgba(148,163,184,0.4); }
+    .chat-send-btn {
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      padding: 10px 18px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      font-size: 14px;
+    }
+    .chat-send-btn:hover { opacity: 0.85; transform: scale(1.03); }
+    .chat-close-btn {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 10px;
+      color: #fca5a5;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chat-close-btn:hover { background: rgba(239,68,68,0.25); color: #fff; }
+
+    /* === SETTINGS === */
+    #settings-box {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 14px;
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 14px;
+      background: rgba(139,92,246,0.04);
+    }
+    .settings-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(148,163,184,0.6); margin-bottom: 2px; margin-top: 4px; }
+    .settings-input {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 8px 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    .settings-input:focus { border-color: rgba(139,92,246,0.5); }
+    .settings-select {
+      background: rgba(15,15,30,0.9);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #cbd5e1;
+      padding: 8px 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      outline: none;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    /* === XP BAR === */
+    #xp-container { font-size: 11px; color: rgba(148,163,184,0.7); margin-top: 4px; }
+    #xp-bar-track { width: 100%; height: 4px; background: rgba(255,255,255,0.07); border-radius: 99px; margin-top: 6px; overflow: hidden; }
+    #xp-bar { height: 100%; background: linear-gradient(90deg, #7c3aed, #3b82f6); border-radius: 99px; transition: width 0.6s ease; width: 0%; }
+
+    /* === WIDGETS === */
+    .widget {
+      position: absolute;
+      background: rgba(10,10,20,0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 11px;
+      font-weight: 500;
+      pointer-events: none;
+      z-index: 50;
+      color: #94a3b8;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.02em;
+    }
+    #bed-container { position: absolute; font-size: 18px; font-weight: bold; pointer-events: none; z-index: 40; color: #7c3aed; text-shadow: 0 0 12px rgba(124,58,237,0.6); font-family: 'Courier New', monospace; }
     #bed-ascii { margin: 0; line-height: 1.1; }
+    #yarn { position: absolute; font-size: 30px; display: none; pointer-events: none; color: #f472b6; text-shadow: 0 0 8px rgba(244,114,182,0.8); }
 
-    .ticker { position: absolute; top: 0; left: 0; width: 100vw; background: rgba(0,0,0,0.8); border-bottom: 1px dashed; font-weight: bold; white-space: nowrap; overflow: hidden; z-index: 60; pointer-events: none; font-size: 14px; padding: 4px 0; }
+    /* === TICKER === */
+    .ticker { position: absolute; top: 0; left: 0; width: 100vw; background: rgba(10,10,20,0.8); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(139,92,246,0.2); font-weight: 500; font-size: 12px; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; z-index: 60; pointer-events: none; padding: 5px 0; color: #94a3b8; font-family: 'Inter', sans-serif; }
     @keyframes tickerAnim { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
     #ticker-text { display: inline-block; white-space: nowrap; animation: tickerAnim 40s linear infinite; }
 
-    .edit-mode { pointer-events: auto !important; cursor: grab; border: 2px dashed #ff0 !important; background: rgba(50, 50, 0, 0.8) !important; color: #ff0 !important; z-index: 1000 !important; }
-    .edit-mode:active { cursor: grabbing; box-shadow: 5px 5px 0px rgba(0,0,0,0.5); }
-    
-    #notepad-input { pointer-events: auto; } /* Let user type inside widget */
+    /* === EDIT MODE === */
+    .edit-mode { pointer-events: auto !important; cursor: grab; border: 1px dashed rgba(250,204,21,0.6) !important; background: rgba(50,40,0,0.75) !important; color: #fde047 !important; z-index: 1000 !important; border-radius: 14px !important; }
+    .edit-mode:active { cursor: grabbing; }
+    #notepad-input { pointer-events: auto; }
   </style>
 </head>
 <body>
@@ -55,49 +320,67 @@
   <div id="speech"></div><div id="yarn">(O)</div>
 
   <div id="menu">
-    <div id="m-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed; margin-bottom: 5px; padding-bottom: 5px; width: 100%; cursor: move;">
-        <div class="menu-title" id="m-title" style="border: none; margin: 0; padding: 0; pointer-events: none;">🤖 AI COMPANION</div>
-        <button onclick="closeMenu()" style="background:transparent; border:none; color:inherit; font-weight:bold; cursor:pointer;" title="Close Menu">[ X ]</button>
+    <div id="m-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: move;">
+        <div class="menu-title" id="m-title" style="pointer-events: none;">🐱 AI COMPANION</div>
+        <button onclick="closeMenu()" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; padding:4px 10px; font-weight:700; cursor:pointer; font-family:inherit; font-size:12px; transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">✕</button>
     </div>
-    <button class="btn" onclick="setMode('wander')">[ WALK ]</button>
-    <button class="btn" onclick="setMode('sleep')">[ SLEEP ]</button>
-    <button class="btn" onclick="setMode('play')">[ FETCH ]</button>
-    <button class="btn" onclick="toggleChat()">[ CHAT ]</button>
-    <button class="btn" onclick="reroll()">[ MUTATE SEED ]</button>
-    <button class="btn" onclick="runJanitor()" style="color: #af8; border-color: #af8;">[ CLEAN FILES ]</button>
-    <button class="btn" onclick="cycleSkin()">[ CHANGE SKIN ]</button>
-    <button class="btn" onclick="toggleLayoutMode()" id="layout-btn" style="border-style: dashed;">[ EDIT LAYOUT ]</button>
-    <button class="btn" onclick="resetLayout()" style="border-color: #888; color: #aaa;">[ RESET LAYOUT ]</button>
-    <button class="btn" onclick="toggleAlwaysOnTop()" id="ontop-btn" style="border-color: #f88; color: #ff8888;">[ STAY ON TOP: ON ]</button>
-    <button class="btn" onclick="toggleSettings()" style="border-color: #88f; color: #a0a0ff;">[ API SETTINGS ]</button>
-    <div id="xp-container" style="font-size: 10px; border-top: 1px dashed #555; margin-top: 5px; padding-top: 5px; font-family: 'Courier New', monospace;">
-      🧠 BRAIN MASS: <span id="brain-xp">0</span> KB <br>
-      🧬 NEXT EVOLUTION: <span id="brain-next">5</span> KB <br>
-      <div style="width: 100%; height: 5px; background: #222; margin-top: 2px;"><div id="xp-bar" style="width: 0%; height: 100%; background: #0f0; transition: width 0.5s;"></div></div>
+
+    <div class="menu-section-label">Behavior</div>
+    <button class="btn" onclick="setMode('wander')">🐾 Wander</button>
+    <button class="btn" onclick="setMode('sleep')">💤 Sleep</button>
+    <button class="btn" onclick="setMode('play')">🧶 Fetch</button>
+
+    <hr class="menu-divider">
+    <div class="menu-section-label">Intelligence</div>
+    <button class="btn btn-accent" onclick="toggleChat()">💬 Chat with Kitten</button>
+    <button class="btn btn-green" onclick="runJanitor()">🧹 Clean Files</button>
+
+    <hr class="menu-divider">
+    <div class="menu-section-label">Display</div>
+    <button class="btn" onclick="reroll()">🧬 Mutate Seed</button>
+    <button class="btn" onclick="cycleSkin()">🎨 Change Skin</button>
+    <button class="btn" onclick="toggleLayoutMode()" id="layout-btn">📐 Edit Layout</button>
+    <button class="btn" onclick="resetLayout()" style="color: rgba(148,163,184,0.6); border-color: rgba(148,163,184,0.15);">↺ Reset Layout</button>
+
+    <hr class="menu-divider">
+    <div class="menu-section-label">System</div>
+    <button class="btn btn-danger" onclick="toggleAlwaysOnTop()" id="ontop-btn">📌 Stay on Top: ON</button>
+    <button class="btn" onclick="toggleSettings()" style="border-color:rgba(139,92,246,0.4); color:#c4b5fd;">⚙️ Settings</button>
+
+    <div id="xp-container">
+      <div style="display:flex; justify-content:space-between; margin-top: 8px;">
+        <span>🧠 <span id="brain-xp">0</span> KB</span>
+        <span style="color:rgba(148,163,184,0.5);">→ <span id="brain-next">5</span> KB</span>
+      </div>
+      <div id="xp-bar-track"><div id="xp-bar"></div></div>
     </div>
-    <div id="settings-box" style="display:none; flex-direction:column; gap:5px; margin-top:5px; width: 250px; padding: 10px; border: 1px dashed #88f;">
-      <div style="font-size: 11px; margin-bottom: 5px;">Configure Identity & Web Powers:</div>
-      <input type="text" id="pet-name" placeholder="Pet Name (Default: Atomagachi)..." style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
-      <input type="password" id="api-tavily" placeholder="Tavily Key (Web Data)..." style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
-      <input type="password" id="api-gemini" placeholder="Gemini Key (AI Brain)..." style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
-      <select id="brain-engine" style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit; margin-top: 5px;">
-        <option value="cloud">Cloud Brain (Gemini API)</option>
-        <option value="local">Local Brain (Ollama/Gemma)</option>
+
+    <div id="settings-box">
+      <div class="settings-label">Pet Identity</div>
+      <input type="text" id="pet-name" placeholder="Name (default: Atomagachi)" class="settings-input">
+      <div class="settings-label">API Keys</div>
+      <input type="password" id="api-tavily" placeholder="Tavily Key (Web Research)" class="settings-input">
+      <input type="password" id="api-gemini" placeholder="Gemini Key (Cloud Brain)" class="settings-input">
+      <div class="settings-label">Brain Engine</div>
+      <select id="brain-engine" class="settings-select">
+        <option value="cloud">☁️ Cloud Brain (Gemini API)</option>
+        <option value="local">💻 Local Brain (Ollama / Gemma)</option>
       </select>
-      <div style="font-size: 11px; margin-bottom: 5px; margin-top: 5px; border-top: 1px dashed #88f; padding-top: 5px;">File Janitor Privileges:</div>
-      <select id="janitor-scope" style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
-          <option value="none">Level 0: None (Read-Only)</option>
-          <option value="downloads">Level 1: Downloads Sandbox Only</option>
-          <option value="user_docs">Level 2: Downloads & User Documents</option>
+      <div class="settings-label">File Janitor Privileges</div>
+      <select id="janitor-scope" class="settings-select">
+          <option value="none">🔒 Level 0: Read-Only</option>
+          <option value="downloads">📁 Level 1: Downloads Only</option>
+          <option value="user_docs">📂 Level 2: Downloads + Docs</option>
       </select>
-      <button class="btn" onclick="saveSettings()">SAVE & BOOT</button>
+      <button class="btn btn-accent" onclick="saveSettings()" style="margin-top:6px;">💾 Save & Reboot Identity</button>
     </div>
-    <div id="chat-box" style="display:none; flex-direction:column; gap:5px; margin-top:5px; width: 85vw; height: 75vh; max-width: 1400px; max-height: 900px; resize: both; overflow: hidden; min-width: 300px; min-height: 200px; padding: 2px;">
-      <div id="chat-log" style="flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.5); border: 1px inset; padding: 15px; font-size: 16px; display: flex; flex-direction: column; gap: 8px;"></div>
-      <div style="display:flex; flex-direction: row; gap:5px; flex-shrink: 0;">
-        <input type="text" id="chat-input" placeholder="Command me..." autocomplete="off" style="flex-grow: 1; background: #000; border: 1px solid; color: inherit; padding: 8px; font-family: inherit; font-size: 13px;">
-        <button class="btn" onclick="submitChat()">></button>
-        <button class="btn" onclick="document.getElementById('chat-box').style.display='none'" style="color: #f55; border-color: #f55;">X</button>
+
+    <div id="chat-box">
+      <div id="chat-log"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Ask me anything, Captain..." autocomplete="off">
+        <button class="chat-send-btn" onclick="submitChat()">Send ↑</button>
+        <button class="chat-close-btn" onclick="document.getElementById('chat-box').style.display='none'">✕</button>
       </div>
     </div>
   </div>
