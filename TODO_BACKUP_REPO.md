@@ -5,3 +5,6 @@ Hey Cap! When you log back in for your next session, remember that our first pri
 Since he is now a fully standalone, compiled `.exe` with serious file-system access, we need to properly back up his `main.js` and `index.html` logic so we never lose his brain.
 
 Just ping me when you're ready and we'll run the `git init` and `git push` sequence. Have a great night!
+
+## To-Do List
+- [ ] Decide on and implement Gemma 4 integration (evaluate local vs cloud options).

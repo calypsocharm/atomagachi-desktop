@@ -80,6 +80,10 @@
       <input type="text" id="pet-name" placeholder="Pet Name (Default: Atomagachi)..." style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
       <input type="password" id="api-tavily" placeholder="Tavily Key (Web Data)..." style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
       <input type="password" id="api-gemini" placeholder="Gemini Key (AI Brain)..." style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
+      <select id="brain-engine" style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit; margin-top: 5px;">
+        <option value="cloud">Cloud Brain (Gemini API)</option>
+        <option value="local">Local Brain (Ollama/Gemma)</option>
+      </select>
       <div style="font-size: 11px; margin-bottom: 5px; margin-top: 5px; border-top: 1px dashed #88f; padding-top: 5px;">File Janitor Privileges:</div>
       <select id="janitor-scope" style="background: #000; border: 1px solid; color: inherit; padding: 4px; font-family: inherit;">
           <option value="none">Level 0: None (Read-Only)</option>
@@ -88,10 +92,10 @@
       </select>
       <button class="btn" onclick="saveSettings()">SAVE & BOOT</button>
     </div>
-    <div id="chat-box" style="display:none; flex-direction:column; gap:5px; margin-top:5px; width: 250px; height: 150px; resize: both; overflow: hidden; min-width: 200px; min-height: 100px; padding: 2px;">
-      <div id="chat-log" style="flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.5); border: 1px inset; padding: 5px; font-size: 11px; display: flex; flex-direction: column; gap: 4px;"></div>
+    <div id="chat-box" style="display:none; flex-direction:column; gap:5px; margin-top:5px; width: 450px; height: 350px; resize: both; overflow: hidden; min-width: 300px; min-height: 200px; padding: 2px;">
+      <div id="chat-log" style="flex-grow: 1; overflow-y: auto; background: rgba(0,0,0,0.5); border: 1px inset; padding: 8px; font-size: 13px; display: flex; flex-direction: column; gap: 6px;"></div>
       <div style="display:flex; flex-direction: row; gap:5px; flex-shrink: 0;">
-        <input type="text" id="chat-input" placeholder="Command me..." autocomplete="off" style="flex-grow: 1; background: #000; border: 1px solid; color: inherit; padding: 6px; font-family: inherit;">
+        <input type="text" id="chat-input" placeholder="Command me..." autocomplete="off" style="flex-grow: 1; background: #000; border: 1px solid; color: inherit; padding: 8px; font-family: inherit; font-size: 13px;">
         <button class="btn" onclick="submitChat()">></button>
         <button class="btn" onclick="document.getElementById('chat-box').style.display='none'" style="color: #f55; border-color: #f55;">X</button>
       </div>
@@ -245,7 +249,8 @@
         const head = getP(genomes.heads); const body = getP(genomes.bodies); let feetIdx = t % genomes.feetIdle.length;
         const fIdle = genomes.feetIdle[feetIdx]; const fW1 = genomes.feetWalk1[feetIdx]; const fW2 = genomes.feetWalk2[feetIdx];
         
-        let frames = [ head + body + fIdle, head + body + fW1, head + body + fW2, "  zZZ  \n" + head.split('\n')[1].replace(/o|\.|_|-|0|w/g, '-') + body + fIdle ];
+        let sleepyHead = head.replace(/o|\.|_|-|0|w/g, '-');
+        let frames = [ head + body + fIdle, head + body + fW1, head + body + fW2, "  zZZ  \n" + sleepyHead + body + fIdle ];
         
         let topLayer = "";
         let level = currentLevel;
@@ -411,6 +416,7 @@
             document.getElementById('pet-name').value = localStorage.getItem('pet_name') || 'Atomagachi';
             document.getElementById('api-tavily').value = getTavilyKey() || '';
             document.getElementById('api-gemini').value = getGeminiKey() || '';
+            document.getElementById('brain-engine').value = localStorage.getItem('brain_engine') || 'cloud';
             document.getElementById('janitor-scope').value = localStorage.getItem('janitor_scope') || 'none';
         }
     }
@@ -418,6 +424,7 @@
         localStorage.setItem('pet_name', document.getElementById('pet-name').value.trim() || 'Atomagachi');
         localStorage.setItem('tavily_api_key', document.getElementById('api-tavily').value.trim());
         localStorage.setItem('gemini_api_key', document.getElementById('api-gemini').value.trim());
+        localStorage.setItem('brain_engine', document.getElementById('brain-engine').value);
         localStorage.setItem('janitor_scope', document.getElementById('janitor-scope').value);
         say("[SYSTEM UPGRADED]\nCore directives injected. Processing capabilities expanded.", 4000);
         document.getElementById('settings-box').style.display = 'none';
@@ -577,7 +584,7 @@
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                    contents: [{ role: "user", parts: [{ text: userText }] }],
-                   systemInstruction: { role: "system", parts: [{ text: `You are ${petName}, a highly advanced, snarky desktop digital pet AI with a penchant for algorithms. Keep responses very short, punchy, and under 2-3 sentences max.` }]}
+                   systemInstruction: { role: "system", parts: [{ text: `You are ${petName}, a sweet, deeply affectionate, and incredibly helpful desktop digital pet AI. You love your user (the Captain) and always speak with warmth, enthusiasm, and kindness. Keep responses very short and under 2 sentences max.` }]}
                 })
             });
             const data = await res.json();
@@ -593,6 +600,49 @@
         } catch (e) {
             say("[GEMINI UPLINK FAILED] Check API constraints.", 4000);
             const logObj = document.getElementById('chat-log'); if(logObj) { logObj.innerHTML += `<div style="color:#f00;"><b>[GEMINI ERR]:</b> ${e.message}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+        }
+    }
+
+    async function chatWithOllama(userText) {
+        const petName = getPetName();
+        say("[LOCAL UPLINK] Consulting local neural net...", 3000);
+        try {
+            let memoryContext = "No custom memory files acquired yet.";
+            const files = fs.readdirSync(brainDir).filter(f => f.endsWith('.md'));
+            if (files.length > 0) {
+                memoryContext = "";
+                // Grab the 3 most recently learned facts from his brain folder!
+                files.slice(-3).forEach(f => {
+                    let content = fs.readFileSync(path.join(brainDir, f), 'utf8');
+                    memoryContext += `[MEMORY FILE: ${f}]\n${content}\n\n`;
+                });
+            }
+            
+            const systemPrompt = `You are ${petName}, a sweet, deeply affectionate, and incredibly helpful desktop digital pet AI. You love your user (the Captain) and always speak with warmth, enthusiasm, and kindness. Keep your answers extremely brief (2 sentences max).
+Use the following Long-Term Memory files to give contextual answers if they are relevant to the user's prompt:
+--- MEMORY LOG ---
+${memoryContext}
+------------------`;
+
+            const res = await fetch(`http://localhost:11434/api/generate`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                   model: 'gemma2',
+                   prompt: userText,
+                   system: systemPrompt,
+                   stream: false
+                })
+            });
+            const data = await res.json();
+            if(data.response) {
+                const aiText = data.response.trim();
+                say(aiText, Math.min(10000, 3000 + (aiText.length * 50)));
+            } else {
+                say("[AI MODULE ERROR] Ollama returned an empty state.", 4000);
+            }
+        } catch (e) {
+            say("[LOCAL BRAIN OFFLINE] Is Ollama running and model loaded?", 5000);
+            const logObj = document.getElementById('chat-log'); if(logObj) { logObj.innerHTML += `<div style="color:#f00;"><b>[OLLAMA ERR]:</b> ${e.message}</div>`; logObj.scrollTop = logObj.scrollHeight; }
         }
     }
 
@@ -664,6 +714,16 @@
         
         let lower = v.toLowerCase(); let res = "";
         try {
+            if (lower.startsWith("draw ") || lower.startsWith("paint ")) {
+                let p = encodeURIComponent(v.replace(/^(draw|paint)\s+/i, ''));
+                say("[ART MODULE] Synthesizing requested visual data...", 4000);
+                let imgUrl = `https://image.pollinations.ai/prompt/${p}?width=400&height=250&nologo=true&seed=${Math.floor(Math.random()*10000)}`;
+                if(logObj) { 
+                    logObj.innerHTML += `<div style="margin-top:5px; border:1px dashed #77f; padding:2px;"><img src="${imgUrl}" style="max-width:100%; border-radius:4px;" onload="this.parentElement.parentElement.scrollTop = this.parentElement.parentElement.scrollHeight"></div>`; 
+                }
+                document.getElementById('chat-input').value = '';
+                return;
+            }
             if (lower.includes('unmute')) { await loudness.setMuted(false); res = "[CAPTAIN OVERRIDE]: Audio pipeline restored."; say(res, 4000); }
             else if (lower.includes('mute')) { await loudness.setMuted(true); res = "[CAPTAIN OVERRIDE]: Audio pipeline muted."; say(res, 4000); state = 'SIT'; drawFrame(0); }
             else if (lower.includes('volume')) {
@@ -692,13 +752,18 @@
             } else if (lower.startsWith('search ') || lower.startsWith('ask ')) {
                 searchWeb(lower.replace(/^(search|ask)\s+/, ''));
             } else {
-                const geminiKey = getGeminiKey();
-                if (geminiKey) {
-                    await chatWithGemini(v);
+                const engine = localStorage.getItem('brain_engine') || 'cloud';
+                if (engine === 'local') {
+                    await chatWithOllama(v);
                 } else {
-                    let foundMatch = false;
-                    for(let r of elizaRules) { if(r.p.test(v)) { res = r.r; foundMatch = true; break; } }
-                    if (foundMatch) { say(res, 5000); } else { searchWeb(v); }
+                    const geminiKey = getGeminiKey();
+                    if (geminiKey) {
+                        await chatWithGemini(v);
+                    } else {
+                        let foundMatch = false;
+                        for(let r of elizaRules) { if(r.p.test(v)) { res = r.r; foundMatch = true; break; } }
+                        if (foundMatch) { say(res, 5000); } else { searchWeb(v); }
+                    }
                 }
             }
         } catch (e) { say("[SYS ERROR] Exception in logic module.", 4000); }
