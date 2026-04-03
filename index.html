@@ -165,7 +165,7 @@
       backdrop-filter: blur(20px);
       box-shadow: 0 0 40px rgba(139,92,246,0.12);
     }
-    .chat-columns { display: flex; flex-direction: row; flex-grow: 1; height: calc(100% - 50px); }
+    .chat-columns { display: flex; flex-direction: row; flex-grow: 1; min-height: 0; }
     .chat-column { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; color: #e2e8f0; font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.6; }
     #chat-mouse-log { border-right: 1px solid rgba(139,92,246,0.3); background: rgba(0,0,0,0.2); }
     .chat-column::-webkit-scrollbar { width: 4px; }
@@ -588,9 +588,18 @@
     petData = procGenPet(currentSeed); applyTheme();
 
     function drawFrame(idx) {
-       let f = petData.frames[idx];
-       if (state === 'ALERT') { f = " 🚨🚨 \n" + f; } else if (currentProp === 'glasses') { f = " ___ \n|B_B|\n" + f; } else if (currentProp === 'popcorn') { f = " 🍿 \n" + f; }
-       document.getElementById('ascii-canvas').innerText = f;
+       let bounce = idx === 1 ? 'translateY(-6px)' : '';
+       let extras = "";
+       if (state === 'ALERT') { extras = '<div style="position:absolute; top:-20px; font-size:24px;">🚨</div>'; } 
+       else if (currentProp === 'glasses') { extras = '<div style="position:absolute; top:20px; font-size:24px;">👓</div>'; } 
+       else if (currentProp === 'popcorn') { extras = '<div style="position:absolute; bottom:0; right:-10px; font-size:24px;">🍿</div>'; }
+       
+       document.getElementById('ascii-canvas').innerHTML = `
+        <div style="position: relative; transition: transform 0.1s; transform: ${bounce}">
+          ${extras}
+          <img src="cat_sprite.png" style="width: 130px; height: auto;" draggable="false" />
+        </div>
+       `;
     }
     function say(text, duration = 4000) {
       speechEl.innerText = text; speechEl.style.opacity = 1; let bX = x + (scaleX === 1 ? 120 : -speechEl.offsetWidth - 20); let bY = y - 50;
