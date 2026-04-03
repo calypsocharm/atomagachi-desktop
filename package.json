@@ -10,7 +10,7 @@
   },
   "build": {
     "appId": "com.calypso.atomagachi",
-    "productName": "Atomagachi",
+    "productName": "Cat and Mouse Desktop Atomagachi Pet",
     "directories": {
       "output": "dist"
     },
