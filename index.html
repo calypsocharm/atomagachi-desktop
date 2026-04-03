@@ -1049,7 +1049,12 @@ ${memoryContext}
                 })
             });
             const dataMouse = await mouseRes.json();
-            const mouseText = dataMouse.candidates[0].content.parts[0].text.trim();
+            let mouseText = "";
+            if(dataMouse.candidates && dataMouse.candidates[0].content.parts[0].text) {
+                mouseText = dataMouse.candidates[0].content.parts[0].text.trim();
+            } else {
+                throw new Error(dataMouse?.error?.message || "Gemini connection dropped or invalid API state.");
+            }
             
             mSpeech.innerText = "Squeak! I have the answer.";
             if(mouseLogObj) { 
@@ -1099,6 +1104,12 @@ Use your core logic: \n${fs.readFileSync(path.join(__dirname, 'soul.md'), 'utf8'
             
         } catch(e) {
             say("[SYNERGY ERROR] Classroom connection failed.", 4000);
+            if(mouseLogObj) { 
+                mouseLogObj.innerHTML += `<div style="align-self: flex-start; max-width: 95%; background: rgba(239,68,68,0.1); border-left: 4px solid #ef4444; padding: 12px 16px; margin: 4px 0;">
+                    <b style="color:#fca5a5; font-size:11px; text-transform:uppercase;">[ERROR]:</b> ${e.message}
+                </div>`; 
+                mouseLogObj.scrollTop = mouseLogObj.scrollHeight; 
+            }
         }
     }
 
@@ -1320,9 +1331,6 @@ Use your core logic: \n${fs.readFileSync(path.join(__dirname, 'soul.md'), 'utf8'
       let targetMx = x + (scaleX === 1 ? -120 : 120);
       if (targetMx < 10) targetMx = x + 120;
       if (targetMx > window.innerWidth - 60) targetMx = x - 120;
-      
-      if(mX === undefined) var mX = window.innerWidth/2;
-      if(mVx === undefined) var mVx = 0;
 
       if(Math.abs(mX - targetMx) > 20) {
           mVx = (mX < targetMx) ? 5 : -5;
