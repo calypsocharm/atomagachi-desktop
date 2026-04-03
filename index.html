@@ -1265,9 +1265,42 @@ ${memoryContext}
                 let p = encodeURIComponent(v.replace(/^(draw|paint)\s+/i, ''));
                 say("[ART MODULE] Synthesizing requested visual data...", 4000);
                 let imgUrl = `https://image.pollinations.ai/prompt/${p}?width=400&height=250&nologo=true&seed=${Math.floor(Math.random()*10000)}`;
+                const logObj = document.getElementById('chat-log');
                 if(logObj) { 
                     logObj.innerHTML += `<div style="margin-top:5px; border:1px dashed #77f; padding:2px;"><img src="${imgUrl}" style="max-width:100%; border-radius:4px;" onload="this.parentElement.parentElement.scrollTop = this.parentElement.parentElement.scrollHeight"></div>`; 
                 }
+                document.getElementById('chat-input').value = '';
+                return;
+            }
+            if (lower.includes('create a report') || lower.includes('save report') || lower.startsWith('/export')) {
+                const dPath = path.join(os.homedir(), 'Desktop', `Atomagachi_Report_${Date.now()}.md`);
+                let rawTranscript = localChatHistory.map(c => `[${c.role.toUpperCase()}]: ${c.content}`).join('\n\n');
+                
+                try {
+                    const geminiKey = getGeminiKey();
+                    if (geminiKey) {
+                        say("[REPORT UPLINK] Asking Mouse to format a beautiful executive summary...", 3000);
+                        const mouseRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=` + geminiKey, {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                               contents: [{ role: "user", parts: [{ text: `Take the following raw transcript of an AI brainstorming session and synthesize it into a beautifully formatted, highly structured Markdown report. Include a Title, Executive Summary, Key Takeaways, Code Snippets/Prompts discussed, and Actionable Next Steps. Make it visually engaging and readable. Do not omit technical details.\n\nTRANSCRIPT:\n${rawTranscript}` }] }]
+                            })
+                        });
+                        const dataMouse = await mouseRes.json();
+                        if(dataMouse.candidates && dataMouse.candidates[0].content.parts[0].text) {
+                            fs.writeFileSync(dPath, dataMouse.candidates[0].content.parts[0].text.trim());
+                            say(`[REPORT GENERATED]\nBeautiful Markdown report successfully hard-written to your Desktop!`, 6000);
+                            document.getElementById('chat-input').value = '';
+                            return;
+                        }
+                    }
+                } catch (err) {}
+                
+                // Fallback to raw dump if no API key or API fails
+                let rep = `# Atomagachi System Report\nCreated by Synergy Loop\n\n`;
+                localChatHistory.forEach(c => rep += `### ${c.role.toUpperCase()}\n${c.content}\n\n`);
+                fs.writeFileSync(dPath, rep);
+                say(`[REPORT GENERATED]\nRaw session hard-written to your Desktop!`, 6000);
                 document.getElementById('chat-input').value = '';
                 return;
             }
