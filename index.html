@@ -399,7 +399,8 @@
     const winMode = urlParams.get('mode') || 'cat';
 
     if (winMode === 'cat') {
-        document.querySelectorAll('.widget, #bed-container').forEach(e => e.style.display = 'none');
+        document.querySelectorAll('.widget').forEach(e => e.style.display = 'none');
+        document.getElementById('bed-container').style.visibility = 'hidden';
     } else if (winMode === 'widgets') {
         document.getElementById('cat-container').style.display = 'none';
         document.getElementById('menu').style.display = 'none';
