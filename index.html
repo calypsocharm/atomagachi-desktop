@@ -1172,7 +1172,16 @@ Use your core logic: \n${fs.readFileSync(path.join(__dirname, 'soul.md'), 'utf8'
         }, 2500);
     };
 
-    window.toggleChat = function() { const b = document.getElementById('chat-box'); b.style.display = b.style.display === 'flex' ? 'none' : 'flex'; if(b.style.display==='flex') document.getElementById('chat-input').focus(); };
+    window.toggleChat = function() { 
+        const b = document.getElementById('chat-box'); 
+        b.style.display = b.style.display === 'flex' ? 'none' : 'flex'; 
+        if(b.style.display==='flex') {
+            document.getElementById('chat-input').focus();
+            localStorage.setItem('brain_engine', 'synergy');
+            const selector = document.getElementById('brain-engine');
+            if (selector) selector.value = 'synergy';
+        }
+    };
     window.submitChat = async function() { 
         const v = document.getElementById('chat-input').value.trim(); 
         if(!v) return;
