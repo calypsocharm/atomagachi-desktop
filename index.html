@@ -590,14 +590,21 @@
     function drawFrame(idx) {
        let bounce = idx === 1 ? 'translateY(-6px)' : '';
        let extras = "";
-       if (state === 'ALERT') { extras = '<div style="position:absolute; top:-20px; font-size:24px;">🚨</div>'; } 
-       else if (currentProp === 'glasses') { extras = '<div style="position:absolute; top:20px; font-size:24px;">👓</div>'; } 
-       else if (currentProp === 'popcorn') { extras = '<div style="position:absolute; bottom:0; right:-10px; font-size:24px;">🍿</div>'; }
+       if (state === 'ALERT') { extras = '<div style="position:absolute; top:-20px; font-size:24px; text-shadow:none;">🚨</div>'; } 
+       else if (currentProp === 'glasses') { extras = '<div style="position:absolute; top:40px; font-size:40px; text-shadow:none;">👓</div>'; } 
+       else if (currentProp === 'popcorn') { extras = '<div style="position:absolute; bottom:0; right:-20px; font-size:36px; text-shadow:none;">🍿</div>'; }
        
-       document.getElementById('ascii-canvas').innerHTML = `
+       const canvas = document.getElementById('ascii-canvas');
+       // Remove the neon gradient logic so it doesn't mess with the image
+       canvas.style.background = 'none';
+       canvas.style.webkitBackgroundClip = 'initial';
+       canvas.style.webkitTextFillColor = 'initial';
+       canvas.style.filter = 'none';
+       
+       canvas.innerHTML = `
         <div style="position: relative; transition: transform 0.1s; transform: ${bounce}">
           ${extras}
-          <img src="cat_sprite.png" style="width: 130px; height: auto;" draggable="false" />
+          <img src="cat_sprite.png" style="height: 180px; width: auto; max-width: 250px; display:block;" draggable="false" />
         </div>
        `;
     }
