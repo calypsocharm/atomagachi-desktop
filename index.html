@@ -984,13 +984,44 @@
         try {
             let memoryContext = "No custom memory files acquired yet.";
             const files = fs.readdirSync(brainDir).filter(f => f.endsWith('.md'));
+            
             if (files.length > 0) {
-                memoryContext = "";
-                // Grab the 3 most recently learned facts from his brain folder!
-                files.slice(-3).forEach(f => {
-                    let content = fs.readFileSync(path.join(brainDir, f), 'utf8');
-                    memoryContext += `[MEMORY FILE: ${f}]\n${content}\n\n`;
+                // ACTIVE REASONING LOOP (Step 1: Generate Search Query)
+                say("[MEMORY UPLINK] Generating internal search queries...", 2000);
+                const queryRes = await fetch(`http://localhost:11434/api/chat`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                       model: 'gemma4',
+                       messages: [{ role: 'user', content: `Extract exactly 2 specific technical search keywords from this prompt to search a filesystem. Reply with ONLY the two words separated by a comma, no quotes or intro text: "${userText}"` }],
+                       stream: false
+                    })
                 });
+                const queryData = await queryRes.json();
+                const keywords = (queryData.message?.content || "").split(',').map(k => k.trim().toLowerCase()).filter(k => k.length > 2);
+                
+                // ACTIVE REASONING LOOP (Step 2: Traverse and Match)
+                say(`[MEMORY UPLINK] Scanning database for: ${keywords.join(', ')}`, 3000);
+                let relevantBlocks = [];
+                files.forEach(f => {
+                    const content = fs.readFileSync(path.join(brainDir, f), 'utf8');
+                    const lowerContent = content.toLowerCase();
+                    for (const kw of keywords) {
+                        const idx = lowerContent.indexOf(kw);
+                        if (idx !== -1) {
+                            // Extract 600 characters around the hit
+                            const start = Math.max(0, idx - 100);
+                            const end = Math.min(content.length, idx + 500);
+                            relevantBlocks.push(`[FROM ${f}]:\n...${content.substring(start, end)}...`);
+                            break; // move to next file
+                        }
+                    }
+                });
+                
+                if (relevantBlocks.length > 0) {
+                    memoryContext = relevantBlocks.slice(0, 4).join('\n\n'); // Limit to top 4 hits
+                } else {
+                    memoryContext = "Database search returned no exact matches for the keywords.";
+                }
             }
             
             const soulData = fs.readFileSync(path.join(__dirname, 'soul.md'), 'utf8');
