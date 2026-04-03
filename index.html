@@ -1272,7 +1272,7 @@ ${memoryContext}
                 document.getElementById('chat-input').value = '';
                 return;
             }
-            if (lower.includes('create a report') || lower.includes('save report') || lower.startsWith('/export')) {
+            if (/create\s*(a\s*)?report/i.test(lower) || /generate\s*(a\s*)?report/i.test(lower) || /save\s*report/i.test(lower) || /export/i.test(lower)) {
                 const dPath = path.join(os.homedir(), 'Desktop', `Atomagachi_Report_${Date.now()}.md`);
                 let rawTranscript = localChatHistory.map(c => `[${c.role.toUpperCase()}]: ${c.content}`).join('\n\n');
                 
