@@ -394,7 +394,7 @@
       </div>
       <div class="chat-action-row" style="display:flex; gap:6px; margin-top:8px; margin-bottom: 6px; padding: 0 4px;">
         <button class="btn btn-primary" onclick="document.getElementById('chat-input').value='/export'; submitChat();" style="flex:1; font-size:10px; padding:4px; border-radius:4px; background: rgba(59,130,246,0.2); border: 1px solid #3b82f6; color:#60a5fa; cursor:pointer;">📄 Generate Executive Report</button>
-        <button class="btn btn-accent" onclick="document.getElementById('chat-input').value='draw a futuristic neon cat'; submitChat();" style="flex:1; font-size:10px; padding:4px; border-radius:4px; background: rgba(139,92,246,0.2); border: 1px solid #8b5cf6; color:#c4b5fd; cursor:pointer;">🎨 Create Concept Art</button>
+        <button class="btn btn-accent" onclick="let el=document.getElementById('chat-input'); el.value='draw '; el.focus();" style="flex:1; font-size:10px; padding:4px; border-radius:4px; background: rgba(139,92,246,0.2); border: 1px solid #8b5cf6; color:#c4b5fd; cursor:pointer;">🎨 Create Concept Art</button>
       </div>
       <div class="chat-input-row" style="margin-top:auto;">
         <input type="text" id="chat-input" placeholder="Ask me anything, Captain..." autocomplete="off">
@@ -1277,8 +1277,9 @@ ${memoryContext}
                 return;
             }
             if (/create\s*(a\s*)?report/i.test(lower) || /generate\s*(a\s*)?report/i.test(lower) || /save\s*report/i.test(lower) || /export/i.test(lower)) {
-                const dPath = path.join(os.homedir(), 'Desktop', `Atomagachi_Report_${Date.now()}.md`);
+                const dPath = path.join(brainDir, `Atomagachi_Report_${Date.now()}.md`);
                 let rawTranscript = localChatHistory.map(c => `[${c.role.toUpperCase()}]: ${c.content}`).join('\n\n');
+                const { shell } = require('electron');
                 
                 try {
                     const geminiKey = getGeminiKey();
@@ -1293,7 +1294,8 @@ ${memoryContext}
                         const dataMouse = await mouseRes.json();
                         if(dataMouse.candidates && dataMouse.candidates[0].content.parts[0].text) {
                             fs.writeFileSync(dPath, dataMouse.candidates[0].content.parts[0].text.trim());
-                            say(`[REPORT GENERATED]\nBeautiful Markdown report successfully hard-written to your Desktop!`, 6000);
+                            say(`[REPORT GENERATED]\nBeautiful Markdown report successfully generated. Opening folder now!`, 6000);
+                            shell.showItemInFolder(dPath);
                             document.getElementById('chat-input').value = '';
                             return;
                         }
@@ -1304,7 +1306,8 @@ ${memoryContext}
                 let rep = `# Atomagachi System Report\nCreated by Synergy Loop\n\n`;
                 localChatHistory.forEach(c => rep += `### ${c.role.toUpperCase()}\n${c.content}\n\n`);
                 fs.writeFileSync(dPath, rep);
-                say(`[REPORT GENERATED]\nRaw session hard-written to your Desktop!`, 6000);
+                say(`[REPORT GENERATED]\nRaw session generated. Opening folder now!`, 6000);
+                shell.showItemInFolder(dPath);
                 document.getElementById('chat-input').value = '';
                 return;
             }
