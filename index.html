@@ -588,28 +588,20 @@
     petData = procGenPet(currentSeed); applyTheme();
 
     function drawFrame(idx) {
-       // Simulate an organic walk cycle using CSS deformation instead of just bouncing!
-       let walkCycle = '';
-       if (idx === 1) walkCycle = 'translateY(-12px) rotate(-8deg) scaleY(1.05)';
-       else if (idx === 2) walkCycle = 'translateY(0px) rotate(8deg) skewX(-10deg)';
-       else walkCycle = 'translateY(0px) rotate(0deg)';
-
-       let extras = "";
-       if (state === 'ALERT') { extras = '<div style="position:absolute; top:-20px; font-size:24px; text-shadow:none;">🚨</div>'; } 
-       else if (currentProp === 'glasses') { extras = '<div style="position:absolute; top:40px; font-size:40px; text-shadow:none;">👓</div>'; } 
-       else if (currentProp === 'popcorn') { extras = '<div style="position:absolute; bottom:0; right:-20px; font-size:36px; text-shadow:none;">🍿</div>'; }
+       let f = petData.frames[idx];
+       if (state === 'ALERT') { f = " 🚨🚨 \n" + f; } else if (currentProp === 'glasses') { f = " ___ \n|B_B|\n" + f; } else if (currentProp === 'popcorn') { f = " 🍿 \n" + f; }
        
        const canvas = document.getElementById('ascii-canvas');
-       canvas.style.background = 'none'; canvas.style.webkitBackgroundClip = 'initial'; canvas.style.webkitTextFillColor = 'initial'; canvas.style.filter = 'none';
+       canvas.innerHTML = f;
        
-       canvas.innerHTML = `
-        <div style="position: relative; transition: transform 0.15s ease-in-out; transform: ${walkCycle}; transform-origin: bottom center;">
-          ${extras}
-          <img src="cat_sprite.png" style="height: 180px; width: 140px; object-fit: contain; display:block;" draggable="false" />
-        </div>
-       `;
-       // Live update physics bounds so he never falls off the screen
-       catSizeBounds = { h: 180, w: 140 };
+       // Massive holographic neon glow upgrade for the procedural ASCII
+       canvas.style.background = 'linear-gradient(45deg, #c084fc, #3b82f6)';
+       canvas.style.webkitBackgroundClip = 'text';
+       canvas.style.webkitTextFillColor = 'transparent';
+       canvas.style.filter = 'drop-shadow(0px 0px 4px rgba(139,92,246,1)) drop-shadow(0px 0px 12px rgba(59,130,246,0.8))';
+       
+       // Live update physics bounds for pure text scaling
+       catSizeBounds = canvas.getBoundingClientRect();
     }
     function say(text, duration = 4000) {
       speechEl.innerText = text; speechEl.style.opacity = 1; let bX = x + (scaleX === 1 ? 120 : -speechEl.offsetWidth - 20); let bY = y - 50;
