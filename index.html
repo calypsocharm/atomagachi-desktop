@@ -588,25 +588,28 @@
     petData = procGenPet(currentSeed); applyTheme();
 
     function drawFrame(idx) {
-       let bounce = idx === 1 ? 'translateY(-6px)' : '';
+       // Simulate an organic walk cycle using CSS deformation instead of just bouncing!
+       let walkCycle = '';
+       if (idx === 1) walkCycle = 'translateY(-12px) rotate(-8deg) scaleY(1.05)';
+       else if (idx === 2) walkCycle = 'translateY(0px) rotate(8deg) skewX(-10deg)';
+       else walkCycle = 'translateY(0px) rotate(0deg)';
+
        let extras = "";
        if (state === 'ALERT') { extras = '<div style="position:absolute; top:-20px; font-size:24px; text-shadow:none;">🚨</div>'; } 
        else if (currentProp === 'glasses') { extras = '<div style="position:absolute; top:40px; font-size:40px; text-shadow:none;">👓</div>'; } 
        else if (currentProp === 'popcorn') { extras = '<div style="position:absolute; bottom:0; right:-20px; font-size:36px; text-shadow:none;">🍿</div>'; }
        
        const canvas = document.getElementById('ascii-canvas');
-       // Remove the neon gradient logic so it doesn't mess with the image
-       canvas.style.background = 'none';
-       canvas.style.webkitBackgroundClip = 'initial';
-       canvas.style.webkitTextFillColor = 'initial';
-       canvas.style.filter = 'none';
+       canvas.style.background = 'none'; canvas.style.webkitBackgroundClip = 'initial'; canvas.style.webkitTextFillColor = 'initial'; canvas.style.filter = 'none';
        
        canvas.innerHTML = `
-        <div style="position: relative; transition: transform 0.1s; transform: ${bounce}">
+        <div style="position: relative; transition: transform 0.15s ease-in-out; transform: ${walkCycle}; transform-origin: bottom center;">
           ${extras}
-          <img src="cat_sprite.png" style="height: 180px; width: auto; max-width: 250px; display:block;" draggable="false" />
+          <img src="cat_sprite.png" style="height: 180px; width: 140px; object-fit: contain; display:block;" draggable="false" />
         </div>
        `;
+       // Live update physics bounds so he never falls off the screen
+       catSizeBounds = { h: 180, w: 140 };
     }
     function say(text, duration = 4000) {
       speechEl.innerText = text; speechEl.style.opacity = 1; let bX = x + (scaleX === 1 ? 120 : -speechEl.offsetWidth - 20); let bY = y - 50;
