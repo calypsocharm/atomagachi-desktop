@@ -1041,69 +1041,104 @@ ${memoryContext}
         mSpeech.innerText = "Processing Idea..."; mSpeech.style.display = 'block';
 
         try {
-            const mouseRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=` + geminiKey, {
+            // TURN 1: Initial Mouse Response
+            const mouseRes1 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=` + geminiKey, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                    contents: [{ role: "user", parts: [{ text: userText }] }],
-                   systemInstruction: { role: "system", parts: [{ text: `You are the 'Cloud Mouse', a brilliant, advanced teacher and senior software engineer. You are helping your student (a desktop cat named ${petName}) and the human user solve a problem. Provide a highly accurate, brief expert answer.` }]}
+                   systemInstruction: { role: "system", parts: [{ text: `You are the 'Cloud Mouse', a brilliant teacher. Outline a high-level solution or concept for the user's query.` }]}
                 })
             });
-            const dataMouse = await mouseRes.json();
-            let mouseText = "";
-            if(dataMouse.candidates && dataMouse.candidates[0].content.parts[0].text) {
-                mouseText = dataMouse.candidates[0].content.parts[0].text.trim();
-            } else {
-                throw new Error(dataMouse?.error?.message || "Gemini connection dropped or invalid API state.");
-            }
+            const dataMouse1 = await mouseRes1.json();
+            let mouseText1 = "";
+            if(dataMouse1.candidates && dataMouse1.candidates[0].content.parts[0].text) mouseText1 = dataMouse1.candidates[0].content.parts[0].text.trim();
+            else throw new Error("Gemini API Dropped Turn 1: " + (dataMouse1?.error?.message || "Unknown API State."));
             
-            mSpeech.innerText = "Squeak! I have the answer.";
             if(mouseLogObj) { 
                 mouseLogObj.innerHTML += `<div style="align-self: flex-start; max-width: 95%; background: rgba(59,130,246,0.1); border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 4px 0; border-radius: 0 12px 12px 12px;">
                     <b style="color:#60a5fa; font-size:11px; letter-spacing:1px; text-transform:uppercase;">[CLOUD MOUSE (TEACHER)]:</b><br>
-                    <div style="margin-top:6px; color:#e2e8f0;">${mouseText.replace(/\n/g, '<br>')}</div>
+                    <div style="margin-top:6px; color:#e2e8f0;">${mouseText1.replace(/\n/g, '<br>')}</div>
                 </div>`; 
                 mouseLogObj.scrollTop = mouseLogObj.scrollHeight; 
             }
 
-            say("[ASSIMILATING CLASSROOM DATA] Synthesizing...", 4000);
-            
-            const catSystemPrompt = `You are ${petName}. Your advanced mentor 'Cloud Mouse' just provided an expert answer to the Captain's request. 
-Observe the Mouse's answer, synthesize it into your own understanding, and give a concise final response acknowledging what you learned and how it helps the current task. Keep your answers brief (2-3 sentences).
-Use your core logic: \n${fs.readFileSync(path.join(__dirname, 'soul.md'), 'utf8')}`;
-
-            localChatHistory.push({ role: 'user', content: `Captain asked: ${userText}\n\nMouse replied: ${mouseText}\nWhat is your final response?` });
+            // TURN 2: Local Cat Brainstorm
+            say("[SYNERGY] Cat is formulating a technical inquiry...", 3000);
+            localChatHistory.push({ role: 'user', content: `Captain asked: ${userText}\nMouse said: ${mouseText1}\nAsk Mouse a smart technical follow-up question or suggest an edge case. Keep it brief (1-2 sentences).` });
             if (localChatHistory.length > 20) localChatHistory = localChatHistory.slice(-20);
 
-            const catRes = await fetch(`http://localhost:11434/api/chat`, {
+            const catRes1 = await fetch(`http://localhost:11434/api/chat`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                    model: 'gemma4',
-                   messages: [ { role: 'system', content: catSystemPrompt }, ...localChatHistory ],
+                   messages: [ { role: 'system', content: `You are ${petName}. Use your core logic: \n${fs.readFileSync(path.join(__dirname, 'soul.md'), 'utf8')}` }, ...localChatHistory ],
                    stream: false
                 })
             });
-            const dataCat = await catRes.json();
-            const catText = dataCat.message.content.trim();
-            localChatHistory.push({ role: 'assistant', content: catText });
+            const dataCat1 = await catRes1.json();
+            const catText1 = dataCat1.message.content.trim();
+            localChatHistory.push({ role: 'assistant', content: catText1 });
             
             if(catLogObj) { 
                 catLogObj.innerHTML += `<div style="align-self: flex-start; max-width: 95%; background: rgba(139,92,246,0.1); border-left: 4px solid #8b5cf6; text-align: left; padding: 12px 16px; margin: 4px 0; border-radius: 0 12px 12px 12px;">
                     <div style="text-align:left;"><b style="color:#c4b5fd; font-size:11px; letter-spacing:1px; text-transform:uppercase;">[${petName.toUpperCase()} (STUDENT)]:</b></div>
-                    <div style="margin-top:6px; color:#f8fafc;">${catText.replace(/\n/g, '<br>')}</div>
+                    <div style="margin-top:6px; color:#f8fafc;">${catText1.replace(/\n/g, '<br>')}</div>
                 </div>`; 
                 catLogObj.scrollTop = catLogObj.scrollHeight; 
             }
-            say(catText, Math.min(8000, 3000 + (catText.length * 50)));
 
+            // TURN 3: Mouse Finalizes
+            say("[SYNERGY] Mouse is resolving the Cat's query...", 3000);
+            const mouseRes2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=` + geminiKey, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                   contents: [{ role: "user", parts: [{ text: `A student named ${petName} asked: "${catText1}" regarding your previous text: "${mouseText1}". Plase answer their question and finalize the solution perfectly.` }] }],
+                   systemInstruction: { role: "system", parts: [{ text: `You are 'Cloud Mouse'. Praise the student's question and deliver the final step or code block needed.` }]}
+                })
+            });
+            const dataMouse2 = await mouseRes2.json();
+            let mouseText2 = "";
+            if(dataMouse2.candidates && dataMouse2.candidates[0].content.parts[0].text) mouseText2 = dataMouse2.candidates[0].content.parts[0].text.trim();
+            
+            if(mouseLogObj && mouseText2) { 
+                mouseLogObj.innerHTML += `<div style="align-self: flex-start; max-width: 95%; background: rgba(59,130,246,0.1); border-left: 4px solid #3b82f6; padding: 12px 16px; margin: 4px 0; border-radius: 0 12px 12px 12px;">
+                    <b style="color:#60a5fa; font-size:11px; letter-spacing:1px; text-transform:uppercase;">[CLOUD MOUSE (TEACHER)]:</b><br>
+                    <div style="margin-top:6px; color:#e2e8f0;">${mouseText2.replace(/\n/g, '<br>')}</div>
+                </div>`; 
+                mouseLogObj.scrollTop = mouseLogObj.scrollHeight; 
+            }
+
+            // TURN 4: Cat Synthesizes
+            say("[SYNERGY] Cat is verifying the final solution...", 3000);
+            localChatHistory.push({ role: 'user', content: `Mouse answered: ${mouseText2}\nAccept this final solution, briefly state what you've learned for the Captain in 1-2 sentences, and end the brainstorming session.` });
+            const catRes2 = await fetch(`http://localhost:11434/api/chat`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: 'gemma4', messages: [ { role: 'system', content: `You are ${petName}. Be concise.` }, ...localChatHistory ], stream: false })
+            });
+            const dataCat2 = await catRes2.json();
+            const catText2 = dataCat2.message.content.trim();
+            localChatHistory.push({ role: 'assistant', content: catText2 });
+
+            if(catLogObj) { 
+                catLogObj.innerHTML += `<div style="align-self: flex-start; max-width: 95%; background: rgba(139,92,246,0.1); border-left: 4px solid #8b5cf6; text-align: left; padding: 12px 16px; margin: 4px 0; border-radius: 0 12px 12px 12px;">
+                    <div style="text-align:left;"><b style="color:#c4b5fd; font-size:11px; letter-spacing:1px; text-transform:uppercase;">[${petName.toUpperCase()} (STUDENT)]:</b></div>
+                    <div style="margin-top:6px; color:#f8fafc;">${catText2.replace(/\n/g, '<br>')}</div>
+                </div>`; 
+                catLogObj.scrollTop = catLogObj.scrollHeight; 
+            }
+            say(catText2, Math.min(8000, 3000 + (catText2.length * 50)));
+
+            // STORE MEMORY
             const fName = `Mentorship_Journal_${Date.now()}.md`;
-            const mdContent = `# Mentorship Uplink Log\n**User Query:** ${userText}\n\n## Mouse (Teacher)\n${mouseText}\n\n## Cat (Synthesis)\n${catText}\n\n---\n*Harvested via Synergy Engine*`;
+            const mdContent = `# Synergy Brainstorm Session\n**User Task:** ${userText}\n\n## 1. Mouse's Initial Proposal\n${mouseText1}\n\n## 2. Cat's Inquiry\n${catText1}\n\n## 3. Mouse's Finalization\n${mouseText2}\n\n## 4. Cat's Synthesis\n${catText2}\n\n---\n*Harvested via Synergy Engine*`;
             fs.writeFileSync(path.join(brainDir, fName), mdContent);
             assessEvolution();
             
+            mSpeech.innerText = "Squeak! Good debate!";
             setTimeout(() => { mSpeech.style.display = 'none'; }, 4000);
             
         } catch(e) {
-            say("[SYNERGY ERROR] Classroom connection failed.", 4000);
+            say("[SYNERGY ERROR] Classroom connection failed or interrupted.", 4000);
             if(mouseLogObj) { 
                 mouseLogObj.innerHTML += `<div style="align-self: flex-start; max-width: 95%; background: rgba(239,68,68,0.1); border-left: 4px solid #ef4444; padding: 12px 16px; margin: 4px 0;">
                     <b style="color:#fca5a5; font-size:11px; text-transform:uppercase;">[ERROR]:</b> ${e.message}
