@@ -392,6 +392,10 @@
            <div style="text-align: center; font-size: 11px; color: #c4b5fd; letter-spacing: 2px; border-bottom: 1px dashed #c4b5fd; padding-bottom: 5px; margin-bottom: 10px;">🐱 JUNIOR CAT (OLLAMA)</div>
         </div>
       </div>
+      <div class="chat-action-row" style="display:flex; gap:6px; margin-top:8px; margin-bottom: 6px; padding: 0 4px;">
+        <button class="btn btn-primary" onclick="document.getElementById('chat-input').value='/export'; submitChat();" style="flex:1; font-size:10px; padding:4px; border-radius:4px; background: rgba(59,130,246,0.2); border: 1px solid #3b82f6; color:#60a5fa; cursor:pointer;">📄 Generate Executive Report</button>
+        <button class="btn btn-accent" onclick="document.getElementById('chat-input').value='draw a futuristic neon cat'; submitChat();" style="flex:1; font-size:10px; padding:4px; border-radius:4px; background: rgba(139,92,246,0.2); border: 1px solid #8b5cf6; color:#c4b5fd; cursor:pointer;">🎨 Create Concept Art</button>
+      </div>
       <div class="chat-input-row" style="margin-top:auto;">
         <input type="text" id="chat-input" placeholder="Ask me anything, Captain..." autocomplete="off">
         <button class="chat-send-btn" onclick="submitChat()">Send ↑</button>
