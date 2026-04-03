@@ -1,0 +1,29 @@
+{
+  "name": "atomagachi",
+  "version": "2.0.0",
+  "description": "Desktop cat buddy",
+  "author": "Antigravity <code@agent.local>",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.calypso.atomagachi",
+    "productName": "Atomagachi",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable",
+      "icon": "icon.png"
+    }
+  },
+  "dependencies": {
+    "loudness": "^0.4.2"
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^26.8.1"
+  }
+}

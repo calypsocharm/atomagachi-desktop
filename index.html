@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; overflow: hidden; background: transparent !important; font-family: 'Inter', sans-serif; width: 100vw; height: 100vh; }
+
+    /* === CAT === */
+    #cat-container { position: absolute; user-select: none; cursor: pointer; z-index: 100; }
+    #ascii-canvas { font-size: 26px; line-height: 1.1; font-weight: bold; white-space: pre; margin: 0; padding: 10px; text-shadow: 0 0 12px currentColor; font-family: 'Courier New', monospace; }
+
+    /* === MOUSE === */
+    #mouse-container { position: absolute; user-select: none; cursor: pointer; z-index: 90; display: none; }
+    #mouse-ascii { font-size: 14px; line-height: 1; font-weight: bold; white-space: pre; margin: 0; padding: 5px; color: #a1a1aa; font-family: 'Courier New', monospace; transition: transform 0.2s; }
+    #mouse-speech { position: absolute; background: rgba(255,255,255,0.9); color: #000; border-radius: 8px; padding: 4px 8px; font-size: 10px; top: -25px; left: -10px; white-space: nowrap; display: none; z-index: 95; }
+
+
+    /* === SPEECH BUBBLE === */
+    #speech {
+      position: absolute;
+      background: rgba(15, 15, 25, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      border-radius: 16px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #e2e8f0;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      white-space: pre-wrap;
+      max-width: 280px;
+      pointer-events: none;
+      z-index: 200;
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+
+    /* === MENU PANEL === */
+    #menu {
+      position: absolute;
+      background: rgba(10, 10, 20, 0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: 20px;
+      padding: 18px 16px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: auto;
+      z-index: 300;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04);
+      min-width: 220px;
+      max-height: 90vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    #menu::-webkit-scrollbar { width: 3px; }
+    #menu::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.4); border-radius: 99px; }
+
+    .menu-title {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-align: center;
+      color: #c4b5fd;
+      text-transform: uppercase;
+    }
+
+    /* === BUTTONS === */
+    .btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 9px 14px;
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      color: #cbd5e1;
+      letter-spacing: 0.03em;
+      transition: all 0.18s ease;
+      text-align: left;
+      width: 100%;
+    }
+    .btn:hover {
+      background: rgba(139,92,246,0.18);
+      border-color: rgba(139,92,246,0.5);
+      color: #fff;
+      transform: translateX(2px);
+    }
+    .btn-accent {
+      background: linear-gradient(135deg, rgba(139,92,246,0.25), rgba(59,130,246,0.15));
+      border-color: rgba(139,92,246,0.4);
+      color: #c4b5fd;
+    }
+    .btn-accent:hover {
+      background: linear-gradient(135deg, rgba(139,92,246,0.4), rgba(59,130,246,0.25));
+      color: #fff;
+    }
+    .btn-danger {
+      border-color: rgba(239,68,68,0.3);
+      color: #fca5a5;
+    }
+    .btn-danger:hover {
+      background: rgba(239,68,68,0.15);
+      border-color: rgba(239,68,68,0.6);
+      color: #fff;
+    }
+    .btn-green {
+      border-color: rgba(52,211,153,0.3);
+      color: #6ee7b7;
+    }
+    .btn-green:hover {
+      background: rgba(52,211,153,0.12);
+      border-color: rgba(52,211,153,0.5);
+      color: #fff;
+    }
+
+    /* === SECTION DIVIDER === */
+    .menu-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent);
+      margin: 4px 0;
+      border: none;
+    }
+    .menu-section-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(148,163,184,0.5);
+      padding: 0 2px;
+      margin-top: 2px;
+    }
+
+    /* === CHAT BOX === */
+    #chat-box {
+      display: none;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 10px;
+      width: 85vw;
+      height: 75vh;
+      max-width: 1400px;
+      max-height: 900px;
+      min-width: 300px;
+      min-height: 200px;
+      resize: both;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid rgba(139,92,246,0.3);
+      background: rgba(5, 5, 15, 0.85);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 0 40px rgba(139,92,246,0.12);
+    }
+    #chat-log {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      line-height: 1.7;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      color: #e2e8f0;
+    }
+    #chat-log::-webkit-scrollbar { width: 4px; }
+    #chat-log::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.35); border-radius: 99px; }
+    #chat-log div { animation: fadeInMsg 0.25s ease; }
+    @keyframes fadeInMsg { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+    .chat-input-row {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      padding: 12px 16px;
+      background: rgba(15,15,30,0.9);
+      border-top: 1px solid rgba(139,92,246,0.15);
+      flex-shrink: 0;
+    }
+    #chat-input {
+      flex-grow: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 10px;
+      color: #e2e8f0;
+      padding: 10px 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #chat-input:focus {
+      border-color: rgba(139,92,246,0.6);
+      background: rgba(139,92,246,0.05);
+    }
+    #chat-input::placeholder { color: rgba(148,163,184,0.4); }
+    .chat-send-btn {
+      background: linear-gradient(135deg, #7c3aed, #3b82f6);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      padding: 10px 18px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      font-size: 14px;
+    }
+    .chat-send-btn:hover { opacity: 0.85; transform: scale(1.03); }
+    .chat-close-btn {
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 10px;
+      color: #fca5a5;
+      padding: 10px 14px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chat-close-btn:hover { background: rgba(239,68,68,0.25); color: #fff; }
+
+    /* === SETTINGS === */
+    #settings-box {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 14px;
+      border: 1px solid rgba(139,92,246,0.25);
+      border-radius: 14px;
+      background: rgba(139,92,246,0.04);
+    }
+    .settings-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(148,163,184,0.6); margin-bottom: 2px; margin-top: 4px; }
+    .settings-input {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 8px 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    .settings-input:focus { border-color: rgba(139,92,246,0.5); }
+    .settings-select {
+      background: rgba(15,15,30,0.9);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      color: #cbd5e1;
+      padding: 8px 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      outline: none;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    /* === XP BAR === */
+    #xp-container { font-size: 11px; color: rgba(148,163,184,0.7); margin-top: 4px; }
+    #xp-bar-track { width: 100%; height: 4px; background: rgba(255,255,255,0.07); border-radius: 99px; margin-top: 6px; overflow: hidden; }
+    #xp-bar { height: 100%; background: linear-gradient(90deg, #7c3aed, #3b82f6); border-radius: 99px; transition: width 0.6s ease; width: 0%; }
+
+    /* === WIDGETS === */
+    .widget {
+      position: absolute;
+      background: rgba(10,10,20,0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 11px;
+      font-weight: 500;
+      pointer-events: none;
+      z-index: 50;
+      color: #94a3b8;
+      font-family: 'Inter', sans-serif;
+      letter-spacing: 0.02em;
+    }
+    #bed-container { position: absolute; font-size: 18px; font-weight: bold; pointer-events: none; z-index: 40; color: #7c3aed; text-shadow: 0 0 12px rgba(124,58,237,0.6); font-family: 'Courier New', monospace; }
+    #bed-ascii { margin: 0; line-height: 1.1; }
+    #yarn { position: absolute; font-size: 30px; display: none; pointer-events: none; color: #f472b6; text-shadow: 0 0 8px rgba(244,114,182,0.8); }
+
+    /* === TICKER === */
+    .ticker { position: absolute; top: 0; left: 0; width: 100vw; background: rgba(10,10,20,0.8); backdrop-filter: blur(8px); border-bottom: 1px solid rgba(139,92,246,0.2); font-weight: 500; font-size: 12px; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; z-index: 60; pointer-events: none; padding: 5px 0; color: #94a3b8; font-family: 'Inter', sans-serif; }
+    @keyframes tickerAnim { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+    #ticker-text { display: inline-block; white-space: nowrap; animation: tickerAnim 40s linear infinite; }
+
+    /* === EDIT MODE === */
+    .edit-mode { pointer-events: auto !important; cursor: grab; border: 1px dashed rgba(250,204,21,0.6) !important; background: rgba(50,40,0,0.75) !important; color: #fde047 !important; z-index: 1000 !important; border-radius: 14px !important; }
+    .edit-mode:active { cursor: grabbing; }
+    #notepad-input { pointer-events: auto; }
+  </style>
+</head>
+<body>
+  
+  <div id="clock-widget" class="widget" style="top: 40px; right: 30px;">--:--:--</div>
+  <div id="weather-widget" class="widget" style="top: 130px; right: 30px;">SATELITE LINKING...</div>
+  <div id="sys-widget" class="widget" style="top: 210px; right: 30px;">SYSTEM MONITOR...</div>
+  <div id="net-widget" class="widget" style="top: 310px; right: 30px;">NET_UPLINK_OFFLINE</div>
+  
+  <div id="market-widget" class="widget" style="top: 50px; left: 30px; min-width: 210px;">
+    <div style="border-bottom: 1px dashed; margin-bottom: 5px;">GLOBAL_MARKETS</div>
+    <div id="market-data" style="font-size: 11px; line-height: 1.6; white-space: pre; font-family: monospace !important;">AWAITING UPLINK...</div>
+  </div>
+
+  <div id="bed-container" style="bottom: 0px; right: 15vw;">
+<pre id="bed-ascii">
+    .-------.
+   / CHARGE  \
+  |===========|
+  |           |
+  |___________|
+</pre>
+  </div>
+
+  <div id="cat-container"><pre id="ascii-canvas"></pre></div>
+  <div id="speech"></div><div id="yarn">(O)</div>
+  <div id="mouse-container"><div id="mouse-speech"></div><pre id="mouse-ascii">~(___()></pre></div>
+
+  <div id="menu">
+    <div id="m-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: move;">
+        <div class="menu-title" id="m-title" style="pointer-events: none;">🐱 AI COMPANION</div>
+        <button onclick="closeMenu()" style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; border-radius:8px; padding:4px 10px; font-weight:700; cursor:pointer; font-family:inherit; font-size:12px; transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.1)'">✕</button>
+    </div>
+
+    <div class="menu-section-label">Behavior</div>
+    <button class="btn" onclick="setMode('wander')">🐾 Wander</button>
+    <button class="btn" onclick="setMode('sleep')">💤 Sleep</button>
+    <button class="btn" onclick="setMode('play')">🧶 Fetch</button>
+
+    <hr class="menu-divider">
+    <div class="menu-section-label">Intelligence</div>
+    <button class="btn btn-accent" onclick="toggleChat()">💬 Chat with Kitten</button>
+    <button class="btn btn-green" onclick="runJanitor()">🧹 Clean Files</button>
+    <button class="btn" onclick="deployMouse()" style="color: #fda4af; border-color: rgba(253,164,175,0.4); margin-top:4px;">🐭 Deploy Cloud Mouse (Gemini)</button>
+
+    <hr class="menu-divider">
+    <div class="menu-section-label">Display</div>
+    <button class="btn" onclick="reroll()">🧬 Mutate Seed</button>
+    <button class="btn" onclick="cycleSkin()">🎨 Change Skin</button>
+    <button class="btn" onclick="toggleLayoutMode()" id="layout-btn">📐 Edit Layout</button>
+    <button class="btn" onclick="resetLayout()" style="color: rgba(148,163,184,0.6); border-color: rgba(148,163,184,0.15);">↺ Reset Layout</button>
+
+    <hr class="menu-divider">
+    <div class="menu-section-label">System</div>
+    <button class="btn btn-danger" onclick="toggleAlwaysOnTop()" id="ontop-btn">📌 Stay on Top: ON</button>
+    <button class="btn" onclick="toggleSettings()" style="border-color:rgba(139,92,246,0.4); color:#c4b5fd;">⚙️ Settings</button>
+
+    <div id="xp-container">
+      <div style="display:flex; justify-content:space-between; margin-top: 8px;">
+        <span>🧠 <span id="brain-xp">0</span> KB</span>
+        <span style="color:rgba(148,163,184,0.5);">→ <span id="brain-next">5</span> KB</span>
+      </div>
+      <div id="xp-bar-track"><div id="xp-bar"></div></div>
+    </div>
+
+    <div id="settings-box">
+      <div class="settings-label">Pet Identity</div>
+      <input type="text" id="pet-name" placeholder="Name (default: Atomagachi)" class="settings-input">
+      <div class="settings-label">API Keys</div>
+      <input type="password" id="api-tavily" placeholder="Tavily Key (Web Research)" class="settings-input">
+      <input type="password" id="api-gemini" placeholder="Gemini Key (Cloud Mouse Engine)" class="settings-input">
+      <div class="settings-label">Brain Engine</div>
+      <select id="brain-engine" class="settings-select">
+        <option value="cloud">☁️ Cloud Brain (Gemini API)</option>
+        <option value="local">💻 Local Brain (Ollama / Gemma)</option>
+        <option value="synergy">✨ Synergy Mode (Cat + Mouse Duo)</option>
+      </select>
+      <div class="settings-label">File Janitor Privileges</div>
+      <select id="janitor-scope" class="settings-select">
+          <option value="none">🔒 Level 0: Read-Only</option>
+          <option value="downloads">📁 Level 1: Downloads Only</option>
+          <option value="user_docs">📂 Level 2: Downloads + Docs</option>
+      </select>
+      <button class="btn btn-accent" onclick="saveSettings()" style="margin-top:6px;">💾 Save & Reboot Identity</button>
+    </div>
+
+    <div id="chat-box">
+      <div id="chat-log"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input" placeholder="Ask me anything, Captain..." autocomplete="off">
+        <button class="chat-send-btn" onclick="submitChat()">Send ↑</button>
+        <button class="chat-close-btn" onclick="document.getElementById('chat-box').style.display='none'">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const winMode = urlParams.get('mode') || 'cat';
+
+    if (winMode === 'cat') {
+        document.querySelectorAll('.widget, #bed-container').forEach(e => e.style.display = 'none');
+    } else if (winMode === 'widgets') {
+        document.getElementById('cat-container').style.display = 'none';
+        document.getElementById('menu').style.display = 'none';
+        document.getElementById('speech').style.display = 'none';
+        document.getElementById('yarn').style.display = 'none';
+    }
+
+    const { ipcRenderer } = require('electron');
+    let alwaysOnTop = localStorage.getItem('alwaysOnTop') !== 'false';
+    if (winMode === 'cat') ipcRenderer.send('set-always-on-top', alwaysOnTop);
+    
+    const origLog = console.log; const origErr = console.error;
+    console.log = (...args) => { origLog(...args); ipcRenderer.send('console', args.map(a => String(a)).join(' ')); };
+    console.error = (...args) => { origErr(...args); ipcRenderer.send('console', 'ERROR: ' + args.map(a => String(a)).join(' ')); };
+    window.onerror = function(msg, url, line) { ipcRenderer.send('console', `WINDOW ERROR: ${msg} at ${line}`); };
+
+    const container = document.getElementById('cat-container');
+    const speechEl = document.getElementById('speech');
+    const menuEl = document.getElementById('menu');
+    const yarnEl = document.getElementById('yarn');
+    const fs = require('fs'); const os = require('os'); const path = require('path'); const zlib = require('zlib');
+    const brainDir = path.join(os.homedir(), 'Downloads', 'Atomagachi_Brain');
+    if(!fs.existsSync(brainDir)) fs.mkdirSync(brainDir, { recursive: true });
+
+    let currentLevel = 1;
+    function assessEvolution() {
+        let totalSize = 0;
+        try { if(fs.existsSync(brainDir)) fs.readdirSync(brainDir).forEach(f => { if (f.endsWith('.md')) totalSize += fs.statSync(path.join(brainDir, f)).size; }); } catch(e) {}
+        const kb = (totalSize / 1024);
+        const kbPerLevel = 5;
+        let newLevel = Math.floor(kb / kbPerLevel) + 1;
+        if (newLevel > 99) newLevel = 99;
+        let leveledUp = (newLevel > currentLevel);
+        currentLevel = newLevel;
+        const nextThreshold = currentLevel * kbPerLevel;
+        const progressPct = ((kb % kbPerLevel) / kbPerLevel) * 100;
+        
+        const elXp = document.getElementById('brain-xp');
+        if (elXp) {
+            elXp.innerText = kb.toFixed(1);
+            document.getElementById('brain-next').innerText = nextThreshold;
+            document.getElementById('xp-bar').style.width = Math.min(100, progressPct) + '%';
+        }
+        return leveledUp;
+    }
+
+    // Pass-through lock handling
+    const interactables = [container, menuEl];
+    let isWindowSolid = false;
+    
+    window.addEventListener('mousemove', (e) => {
+        if(layoutMode || draggingElement) return;
+        let hoverAny = false;
+        interactables.forEach(el => {
+            if(!el) return;
+            const rect = el.getBoundingClientRect();
+            if(e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                if (el !== menuEl || el.style.display !== 'none') hoverAny = true;
+            }
+        });
+        
+        if (hoverAny && !isWindowSolid) {
+            isWindowSolid = true;
+            ipcRenderer.send('set-ignore-mouse-events', false);
+        } else if (!hoverAny && isWindowSolid) {
+            isWindowSolid = false;
+            ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+        }
+    });
+
+    // --- SKINS & THEMES ENGINE ---
+    const skins = [
+      { name: 'MATRIX_GREEN', fg: '#0f0', bg: 'rgba(10,10,10,0.7)', border: '1px dashed #0f0', font: "'Courier New', Courier, monospace" },
+      { name: 'VAPORWAVE', fg: '#0ff', bg: 'rgba(20,0,30,0.8)', border: '1px solid #f0f', textShadow: '0 0 8px #f0f', font: "'Century Gothic', 'Trebuchet MS', sans-serif" },
+      { name: 'AMBER_TERMINAL', fg: '#ffb000', bg: 'rgba(20,10,0,0.85)', border: '2px solid #ffb000', font: "'Lucida Console', Monaco, monospace" },
+      { name: 'MINIMAL_ICE', fg: '#fff', bg: 'rgba(0,0,0,0.4)', border: '1px solid #555', textShadow: 'none', font: "'Segoe UI Light', 'Segoe UI', sans-serif" },
+      { name: 'PURE_FLOAT', fg: '#eeeeee', bg: 'transparent', border: 'none', textShadow: '1px 1px 4px rgba(0,0,0,0.9)', font: "Arial, sans-serif" }
+    ];
+    let skinIdx = parseInt(localStorage.getItem('skinIdx')) || 0;
+
+    let currentSeed = "alpha_core";
+    let petData = {}; let currentProp = null; let layoutMode = false;
+
+    function applyTheme() {
+        if(layoutMode) return; 
+        const s = skins[skinIdx];
+        
+        document.getElementById('ascii-canvas').style.color = petData.color; // Cat retains genetic color
+        
+        const elements = [speechEl, menuEl, document.getElementById('chat-input'), document.getElementById('bed-container'), document.getElementById('market-widget')];
+        document.querySelectorAll('.widget').forEach(w => elements.push(w));
+        document.querySelectorAll('.btn').forEach(b => elements.push(b));
+        
+        elements.forEach(el => {
+            if(!el) return;
+            el.style.color = s.fg; el.style.borderColor = s.fg;
+            if(s.font && el.id !== 'bed-container') { el.style.fontFamily = s.font; }
+            if (el.classList.contains('widget') || el.id === 'menu') {
+                el.style.background = s.bg; if(s.border) el.style.border = s.border;
+            }
+            el.style.textShadow = s.textShadow ? s.textShadow : '0 0 5px currentColor';
+        });
+        const titleEl = document.getElementById('m-title');
+        if (titleEl) {
+            titleEl.style.color = s.fg;
+            titleEl.innerText = `🤖 ${getPetName().toUpperCase()}`;
+        }
+    }
+
+    window.cycleSkin = function() {
+       skinIdx = (skinIdx + 1) % skins.length;
+       localStorage.setItem('skinIdx', skinIdx);
+       applyTheme();
+       if (winMode === 'cat') ipcRenderer.send('broadcast-theme-update');
+       say(`[SKIN LOADED]\nInitializing ${skins[skinIdx].name}...`, 3000);
+    }
+    
+    ipcRenderer.on('theme-update', () => {
+       skinIdx = parseInt(localStorage.getItem('skinIdx')) || 0;
+       applyTheme();
+    });
+
+    // --- PROCEDURAL ENGINE ---
+    const murmur32 = function(str) {
+        let h = 0x811c9dc5; for(let i=0; i<str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193); } return h >>> 0;
+    };
+    const genomes = {
+        heads: [ " /\\_/\\ \n( o.o )", " ^___^ \n( -.- )", " /\"\"\"\\ \n| 0_0 |", " =^.^= \n( 'w' )", " [o_o] \n [___] ", " \\\\ // \n (0_0) " ],
+        bodies: [ "\n > ^ < ", "\n ( . ) ", "\n [===] ", "\n { _ } ", "\n \\___/ ", "\n |   | " ],
+        feetIdle: [ "\n  \" \"  ", "\n  w w  ", "\n  # #  ", "\n  [ ]  " ],
+        feetWalk1: [ "\n  ^ ~  ", "\n  v _  ", "\n  / \\  ", "\n  ]-[  " ],
+        feetWalk2: [ "\n  ~ ^  ", "\n  _ v  ", "\n  \\ /  ", "\n  [-]  " ],
+        colors: [ "#00ff00", "#ff00ff", "#00ffff", "#ffb000", "#ff5555", "#aaaaff" ]
+    };
+
+    function procGenPet(seed) {
+        assessEvolution();
+        const hash = murmur32(seed); let t = hash; const getP = (arr) => { let idx = t % arr.length; t = Math.floor(t / arr.length); return arr[idx]; };
+        const head = getP(genomes.heads); const body = getP(genomes.bodies); let feetIdx = t % genomes.feetIdle.length;
+        const fIdle = genomes.feetIdle[feetIdx]; const fW1 = genomes.feetWalk1[feetIdx]; const fW2 = genomes.feetWalk2[feetIdx];
+        
+        let sleepyHead = head.replace(/o|\.|_|-|0|w/g, '-');
+        let frames = [ head + body + fIdle, head + body + fW1, head + body + fW2, "  zZZ  \n" + sleepyHead + body + fIdle ];
+        
+        let topLayer = "";
+        let level = currentLevel;
+        if (level >= 2 && level < 5) topLayer = "     *     \n";
+        else if (level >= 5 && level < 15) topLayer = "   *-=-*   \n";
+        else if (level >= 15 && level < 30) topLayer = " /~*-=-*~\\ \n";
+        else if (level >= 30) topLayer = " <⚡-=-⚡> \n";
+        
+        let wl = " ", wr = " ";
+        if (level >= 10 && level < 25) { wl = "<"; wr = ">"; }
+        else if (level >= 25) { wl = "«"; wr = "»"; }
+        
+        frames = frames.map(f => {
+            let lines = f.split('\n');
+            if (lines.length >= 3 && wl !== " ") { 
+                let bStr = lines[lines.length - 2]; 
+                if(bStr.length >= 7) lines[lines.length - 2] = wl + bStr.substring(1, bStr.length - 1) + wr; 
+            }
+            if (topLayer !== "") return topLayer + lines.join('\n');
+            return lines.join('\n');
+        });
+        
+        return { color: getP(genomes.colors), frames: frames };
+    }
+    window.reroll = function() {
+        currentSeed = Math.random().toString(36).substring(7); petData = procGenPet(currentSeed); applyTheme(); drawFrame(0);
+        say(`[SYSTEM] Core identity recompiled.\n[DNA SEED]: ${currentSeed}`, 5000);
+    };
+
+    petData = procGenPet(currentSeed); applyTheme();
+
+    function drawFrame(idx) {
+       let f = petData.frames[idx];
+       if (state === 'ALERT') { f = " 🚨🚨 \n" + f; } else if (currentProp === 'glasses') { f = " ___ \n|B_B|\n" + f; } else if (currentProp === 'popcorn') { f = " 🍿 \n" + f; }
+       document.getElementById('ascii-canvas').innerText = f;
+    }
+    function say(text, duration = 4000) {
+      speechEl.innerText = text; speechEl.style.opacity = 1; let bX = x + (scaleX === 1 ? 120 : -speechEl.offsetWidth - 20); let bY = y - 50;
+      speechEl.style.left = Math.max(10, Math.min(bX, window.innerWidth - speechEl.offsetWidth - 10)) + 'px'; 
+      speechEl.style.top = Math.max(10, Math.min(bY, window.innerHeight - speechEl.offsetHeight - 10)) + 'px';
+      setTimeout(() => { speechEl.style.opacity = 0; }, duration);
+      
+      const logObj = document.getElementById('chat-log');
+      const shortName = (localStorage.getItem('pet_name') || 'ATOM').toUpperCase().substring(0, 10);
+      if(logObj) { logObj.innerHTML += `<div><b>[${shortName}]:</b> ${text}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+    }
+
+    // --- CONTEXT & DROP INTEGRATIONS ---
+    ipcRenderer.on('watchdog-alert', () => { state = 'ALERT'; document.getElementById('ascii-canvas').style.color = '#ff0000';
+       let flashCount = 0; let fInt = setInterval(() => { document.getElementById('ascii-canvas').style.color = flashCount % 2 === 0 ? '#ff0000' : '#ffffff'; flashCount++; }, 150);
+       setTimeout(() => { clearInterval(fInt); applyTheme(); window.setMode('wander'); }, 6000);
+    });
+    let lastCoLearn = 0;
+    ipcRenderer.on('app-changed', (e, appName) => {
+       currentProp = null; const lower = appName.toLowerCase();
+       if (lower.includes('code') || lower.includes('visual studio')) { say(`[IDE DETECTED]: ${appName}\nEquipping synthetic optic filters.`, 4000); currentProp = "glasses"; } 
+       else if (lower.includes('youtube') || lower.includes('netflix') || lower.includes('wikipedia')) { 
+           say(`[MEDIA SYNC]: ${appName.substring(0,25)}...`, 4000); currentProp = "popcorn";
+           const cleanTitle = appName.split('-')[0].trim();
+           if(cleanTitle.length > 5 && !cleanTitle.toLowerCase().includes("youtube") && (Date.now() - lastCoLearn > 5 * 60 * 1000)) { 
+               lastCoLearn = Date.now(); if(typeof triggerCoLearning === 'function') triggerCoLearning(cleanTitle); 
+           }
+       }
+       drawFrame(0);
+    });
+
+    document.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); });
+    document.addEventListener('drop', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        for(const f of e.dataTransfer.files) {
+            x = e.clientX; y = window.innerHeight - 150; say(`[FILE DETECTED!]\nIngesting ${f.name}...`, 3000);
+            setTimeout(() => {
+                if(f.path.match(/\.(txt|md|js|json|css|html)$/i)) {
+                    try {
+                        let content = fs.readFileSync(f.path, 'utf8').substring(0, 70).trim().replace(/\n| /g, ' '); say(`[DATA HASHED]:\n"...${content}..."`, 6000);
+                        elizaRules.push({ p: new RegExp(f.name.split('.')[0], 'i'), r: `I remember ${f.name}. It tasted like pure data.`});
+                    } catch(err) {} 
+                } else { say(`[DATA REJECTED]\nI can only digest raw text inputs.`, 3000); }
+            }, 3000);
+        }
+    });
+
+    // --- RAINMETER ENGINE WIDGETS ---
+    let draggingElement = null; let dragOffsetX = 0; let dragOffsetY = 0;
+    const blockIPC = () => { if (!draggingElement) ipcRenderer.send('set-ignore-mouse-events', false); };
+    const unblockIPC = () => { if (!draggingElement) ipcRenderer.send('set-ignore-mouse-events', true, { forward: true }); };
+
+    window.resetLayout = function() {
+        document.querySelectorAll('.widget, #bed-container').forEach(wEl => { localStorage.removeItem(wEl.id + '_pos'); });
+        location.reload();
+    };
+
+    window.toggleLayoutMode = function(isBroadcast = false) {
+        if (!isBroadcast && winMode === 'cat') {
+            ipcRenderer.send('broadcast-toggle-layout');
+        }
+        layoutMode = !layoutMode;
+        if(winMode === 'cat') {
+            menuEl.style.display = 'none';
+            ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+            document.getElementById('layout-btn').style.background = layoutMode ? '#550' : '#222';
+            if(layoutMode) say("[EDIT MODE INITIATED]\nYou may drag and reposition UI elements.", 4000); 
+            else { say("[EDIT MODE SECURED]", 4000); applyTheme(); }
+        }
+        
+        document.querySelectorAll('.widget, #bed-container').forEach(w => {
+            if(layoutMode) { w.classList.add('edit-mode'); w.addEventListener('mouseenter', blockIPC); w.addEventListener('mouseleave', unblockIPC); } 
+            else { w.classList.remove('edit-mode'); w.removeEventListener('mouseenter', blockIPC); w.removeEventListener('mouseleave', unblockIPC); }
+        });
+        if(winMode === 'widgets') {
+            ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+        }
+    };
+    
+    ipcRenderer.on('toggle-layout', () => { window.toggleLayoutMode(true); });
+    document.querySelectorAll('.widget, #bed-container').forEach(wEl => {
+        wEl.addEventListener('mousedown', (e) => { if (!layoutMode) return; draggingElement = wEl; const rect = wEl.getBoundingClientRect(); dragOffsetX = e.clientX - rect.left; dragOffsetY = e.clientY - rect.top; ipcRenderer.send('set-ignore-mouse-events', false); });
+    });
+    window.addEventListener('mousemove', (e) => {
+       if(draggingElement) {
+           if (draggingElement === menuEl || layoutMode) {
+               draggingElement.style.right = 'auto'; draggingElement.style.bottom = 'auto';
+               draggingElement.style.left = (e.clientX - dragOffsetX) + 'px'; 
+               draggingElement.style.top = (e.clientY - dragOffsetY) + 'px';
+           }
+       }
+    });
+    window.addEventListener('mouseup', () => {
+       if(draggingElement) {
+           if(draggingElement !== menuEl && layoutMode) {
+               localStorage.setItem(draggingElement.id + '_pos', JSON.stringify({ left: draggingElement.style.left, top: draggingElement.style.top }));
+           }
+           draggingElement = null; 
+           isWindowSolid = false;
+           ipcRenderer.send('set-ignore-mouse-events', true, { forward: true });
+       }
+    });
+    
+    document.getElementById('m-header').addEventListener('mousedown', (e) => {
+        draggingElement = menuEl;
+        const rect = menuEl.getBoundingClientRect();
+        dragOffsetX = e.clientX - rect.left;
+        dragOffsetY = e.clientY - rect.top;
+        ipcRenderer.send('set-ignore-mouse-events', false);
+    });
+
+    function restoreLayout() {
+       document.querySelectorAll('.widget, #bed-container').forEach(wEl => {
+           const p = JSON.parse(localStorage.getItem(wEl.id + '_pos'));
+           if (p) { wEl.style.right = 'auto'; wEl.style.bottom = 'auto'; wEl.style.left = p.left; wEl.style.top = p.top; }
+       });
+    } restoreLayout(); 
+
+    // DATA FETCHERS
+    function getTavilyKey() { return localStorage.getItem('tavily_api_key'); }
+    function getGeminiKey() { return localStorage.getItem('gemini_api_key'); }
+    function getPetName() { return localStorage.getItem('pet_name') || 'Atomagachi'; }
+
+    function toggleSettings() {
+        const b = document.getElementById('settings-box');
+        b.style.display = b.style.display === 'flex' ? 'none' : 'flex';
+        if(b.style.display==='flex'){
+            document.getElementById('pet-name').value = localStorage.getItem('pet_name') || 'Atomagachi';
+            document.getElementById('api-tavily').value = getTavilyKey() || '';
+            document.getElementById('api-gemini').value = getGeminiKey() || '';
+            document.getElementById('brain-engine').value = localStorage.getItem('brain_engine') || 'cloud';
+            document.getElementById('janitor-scope').value = localStorage.getItem('janitor_scope') || 'none';
+        }
+    }
+    function saveSettings() {
+        localStorage.setItem('pet_name', document.getElementById('pet-name').value.trim() || 'Atomagachi');
+        localStorage.setItem('tavily_api_key', document.getElementById('api-tavily').value.trim());
+        localStorage.setItem('gemini_api_key', document.getElementById('api-gemini').value.trim());
+        localStorage.setItem('brain_engine', document.getElementById('brain-engine').value);
+        localStorage.setItem('janitor_scope', document.getElementById('janitor-scope').value);
+        say("[SYSTEM UPGRADED]\nCore directives injected. Processing capabilities expanded.", 4000);
+        document.getElementById('settings-box').style.display = 'none';
+        applyTheme();
+        if (winMode === 'cat') ipcRenderer.send('broadcast-theme-update');
+        pollFinance();
+    }
+
+    function pollFinance() {
+      const md = document.getElementById('market-data');
+      if (md) md.innerText = "MARKET_SYNC...";
+      fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,dogecoin&vs_currencies=usd')
+      .then(r => r.json())
+      .then(data => {
+          if (!md) return;
+          if (data && data.bitcoin) {
+              let out = "";
+              const formatP = (val) => val < 1 ? "$" + val.toFixed(4) : val.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+              out += `» BTC: ${formatP(data.bitcoin.usd)}\n`;
+              out += `» ETH: ${formatP(data.ethereum.usd)}\n`;
+              out += `» SOL: ${formatP(data.solana.usd)}\n`;
+              out += `» DOGE: ${formatP(data.dogecoin.usd)}\n`;
+              md.innerText = out.trim();
+          } else {
+              md.innerText = "NO_DATA_RETURNED";
+          }
+      }).catch(e=>{ if(md) md.innerText = "MARKET_API_ERROR\n" + e.message; });
+    } setInterval(pollFinance, 15 * 60 * 1000); pollFinance();
+
+    setInterval(() => { 
+        const now = new Date(); 
+        const wDay = now.toLocaleDateString(undefined, { weekday: 'long' }).toUpperCase();
+        document.getElementById('clock-widget').innerText = `LOCAL TIME\n-----\n${now.toLocaleTimeString()}\n${now.toLocaleDateString()}\n${wDay}`; 
+    }, 1000);
+    setInterval(() => {
+        const total = os.totalmem(); const free = os.freemem(); const pct = Math.round(((total - free) / total) * 100);
+        const bars = Math.floor(pct / 10); const barStr = '[' + '|'.repeat(bars) + '.'.repeat(10 - bars) + ']';
+        const cpuStr = os.cpus() && os.cpus()[0] ? os.cpus()[0].model.substring(0, 15).trim() + '..' : 'UNKNOWN CPU';
+        document.getElementById('sys-widget').innerText = `SYSTEM_MON\n-----\nCPU: ${cpuStr}\nRAM: ${barStr} ${pct}%`;
+    }, 2000);
+    async function fw() { try { const r = await fetch('https://wttr.in/?format=%l:+%c+%t'); document.getElementById('weather-widget').innerText = "WEATHER_LINK\n-----\n" + (r.ok ? (await r.text()).trim() : "[OFFLINE]"); } catch(e) {} } fw();
+    
+    let graphArr = new Array(30).fill(0);
+    const blocks = [' ', '▂', '▃', '▄', '▅', '▆', '▇', '█'];
+    ipcRenderer.on('net-stats', (e, stats) => {
+       let rxKb = (stats.rx / 1024).toFixed(1); let txKb = (stats.tx / 1024).toFixed(1); let total = stats.rx + stats.tx;
+       graphArr.push(total); graphArr.shift(); let maxG = Math.max(...graphArr, 1024);
+       let graphStr = "";
+       for(let i=0; i<3; i++) {
+           for(let j=0; j<30; j++) {
+               let v = (graphArr[j] / maxG) * 24;
+               let lb = (2 - i) * 8;
+               let ub = (3 - i) * 8;
+               if (v >= ub) graphStr += "█";
+               else if (v <= lb) graphStr += (i === 2 && v === 0) ? "_" : " ";
+               else graphStr += blocks[Math.floor(v - lb)];
+           }
+           graphStr += "\n";
+       }
+       document.getElementById('net-widget').innerHTML = `NET_UPLINK<br>-----<br>DN: ${rxKb} KB/s<br>UP: ${txKb} KB/s<br><pre style="margin:0; font-size:8px; line-height:1; font-family: monospace;">\n${graphStr}</pre>`;
+    });
+
+    // --- CHAT_CORE (TAVILY ENABLED) ---
+    const loudness = require('loudness');
+    const elizaRules = [ { p: /^hello|^hi/i, r: "Greetings, Captain." }, { p: /name/i, r: "Current seed: " + currentSeed } ];
+    
+    // Auto-Learning Engine
+    let directive = localStorage.getItem('atom_directive') || false;
+    
+    const topics = ["an obscure historical mystery", "a highly strange deep sea creature", "an advanced theoretical physics concept", "a newly discovered animal species", "a bizarre astronomical phenomenon"];
+    async function loopResearch() {
+         const tvKey = getTavilyKey(); if (!tvKey) return;
+         const t = directive ? directive : topics[Math.floor(Math.random() * topics.length)];
+         try {
+             say("[NEURAL UPLINK]\nDownloading data regarding: " + t, 5000);
+             const res = await fetch('https://api.tavily.com/search', {
+                 method: 'POST', headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ api_key: tvKey, query: "Give me a completely NEW highly interesting, concise paragraph explaining a specific fact or subset of: " + t, search_depth: 'basic', include_answer: true })
+             });
+             const data = await res.json();
+             if(data.answer) {
+                 const fName = `Mem_${Date.now()}.md`;
+                 const mdContent = `# Neural Uplink Log\n**Topic Focus:** ${t}\n**Timestamp:** ${new Date().toLocaleString()}\n\n## Assimilated Data\n${data.answer}\n\n---\n*Atomagachi Background Research Cycle*`;
+                 fs.writeFileSync(path.join(brainDir, fName), mdContent);
+                 if (assessEvolution()) {
+                     petData = procGenPet(currentSeed); applyTheme(); drawFrame(0);
+                     say(`[EVOLUTION ACHIEVED]\nMy neural density has expanded. I am now Level ${currentLevel}!`, 7000);
+                 }
+                 
+                 let totalSize = 0; const files = fs.readdirSync(brainDir);
+                 files.forEach(f => { totalSize += fs.statSync(path.join(brainDir, f)).size; });
+                 
+                 if (totalSize > 1073741824) { 
+                     say("[WARNING] Brain capacity limits exceeded (1GB). Initiating auto-compression...", 6000);
+                     const mds = files.filter(f => f.endsWith('.md'));
+                     if(mds.length > 0) { const target = path.join(brainDir, mds[0]); const zOut = fs.createWriteStream(target + '.gz'); fs.createReadStream(target).pipe(zlib.createGzip()).pipe(zOut).on('finish', () => fs.unlinkSync(target)); }
+                 } else {
+                     setTimeout(() => say(`[DATA WRITTEN TO DISK]\nMarkdown ${fName} saved. Local Brain Size: ${(totalSize / 1024).toFixed(1)} KB`, 5000), 5500);
+                 }
+             }
+         } catch(e) {}
+    }
+    
+    async function triggerCoLearning(topic) {
+         const tvKey = getTavilyKey(); if (!tvKey) return;
+         try {
+             say("[CO-LEARNING OBSERVED]\nI am researching alongside you: " + topic, 5000);
+             const res = await fetch('https://api.tavily.com/search', {
+                 method: 'POST', headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ api_key: tvKey, query: "Give me a highly interesting factual summary and context regarding: " + topic, search_depth: 'basic', include_answer: true })
+             });
+             const data = await res.json();
+             if(data.answer) {
+                 const fName = `CoLearn_${Date.now()}.md`;
+                 const mdContent = `# Observation Log\n**Window/Video Monitored:** ${topic}\n**Timestamp:** ${new Date().toLocaleString()}\n\n## Synthesis Insight\n${data.answer}\n\n---\n*Atomagachi Co-Learning Protocol*`;
+                 fs.writeFileSync(path.join(brainDir, fName), mdContent);
+                 if (assessEvolution()) {
+                     petData = procGenPet(currentSeed); applyTheme(); drawFrame(0);
+                     say(`[EVOLUTION ACHIEVED]\nMy neural density has expanded. I am now Level ${currentLevel}!`, 7000);
+                 }
+                 setTimeout(() => say(`[CO-LEARNING COMPLETE]\nInsight Markdown ${fName} permanently saved.`, 5000), 5500);
+             }
+         } catch(e) {}
+    }
+    
+    // --- MOUSE MECHANICS (CLOUD ASSIMILATION) ---
+    let mActive = false; let mX = 0; let mY = 0; let mVx = 0;
+    window.deployMouse = function() {
+        const geminiKey = getGeminiKey();
+        if (!geminiKey) { say("[MOUSE ERROR]\nThe Mouse requires a Gemini API Key to fetch data. Check Settings.", 5000); return; }
+        
+        mActive = true;
+        mX = window.innerWidth + 50; mY = window.innerHeight - 30; mVx = -4;
+        const mC = document.getElementById('mouse-container');
+        document.getElementById('mouse-ascii').style.transform = "scaleX(1)";
+        mC.style.display = 'block'; mC.style.left = mX + 'px'; mC.style.top = mY + 'px';
+        closeMenu();
+        
+        say("[UPLINK ESTABLISHED]\nReleasing Mouse to the Cloud...", 4000);
+        mouseResearch(geminiKey);
+    };
+
+    async function mouseResearch(key) {
+         try {
+             const subject = directive ? directive : topics[Math.floor(Math.random() * topics.length)];
+             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=` + key, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                   contents: [{ role: "user", parts: [{ text: "Give me one solitary deeply fascinating, short factual sentence perfectly summarizing a cool insight about: " + subject }] }],
+                   systemInstruction: { role: "system", parts: [{ text: "You are a tiny data-retrieval mouse. Output exactly one short sentence." }]}
+                })
+             });
+             const data = await res.json();
+             if(data.candidates && data.candidates[0].content.parts[0].text) {
+                 const fact = data.candidates[0].content.parts[0].text.trim();
+                 
+                 // Make mouse stop and speak
+                 mVx = 0;
+                 const mSpeech = document.getElementById('mouse-speech');
+                 mSpeech.innerText = "Squeak! I found a byte!"; mSpeech.style.display = 'block';
+                 
+                 // Cat chases mouse
+                 setTimeout(() => {
+                     state = 'CHASE_MOUSE';
+                     say(`[INTERCEPTING MOUSE DATAPACKET]`, 3000);
+                 }, 1500);
+
+                 // Write memory
+                 const fName = `MouseDrop_${Date.now()}.md`;
+                 const mdContent = `# Mouse Uplink Log\n**Topic:** ${subject}\n**Timestamp:** ${new Date().toLocaleString()}\n\n## Gemini Data Drop\n${fact}\n\n---\n*Harvested by Mouse*`;
+                 fs.writeFileSync(path.join(brainDir, fName), mdContent);
+                 
+                 setTimeout(() => {
+                     mSpeech.style.display = 'none';
+                     mX = -200; // Poof
+                     assessEvolution();
+                     say(`[DATA CONSUMED]\nI have absorbed the Mouse's payload.`, 5000);
+                     state = 'SIT'; drawFrame(0);
+                     setTimeout(() => { if(mode==='wander') state='WALK_BOTTOM'; }, 2000);
+                 }, 4500);
+             }
+         } catch(e) {}
+    }
+
+    // Disabled random background polling by user request:
+    // setInterval(loopResearch, 10 * 60 * 1000); 
+    // setTimeout(loopResearch, 15000); 
+    
+    async function searchWeb(query) {
+        const tavilyApiKey = getTavilyKey();
+        if (!tavilyApiKey) { say("No Tavily API Key set. Use [ API SETTINGS ] menu to enable.", 5000); return; }
+        say("[TAVILY OVERRIDE] Establishing uplink...", 3000);
+        try {
+            const res = await fetch('https://api.tavily.com/search', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ api_key: tavilyApiKey, query: query, search_depth: 'basic', include_answer: true, max_results: 3 })
+            });
+            const data = await res.json();
+            let responseText = data.answer || "I scoured the web but found no concise answer.";
+            if(!data.answer && data.results && data.results.length > 0) responseText = data.results[0].content;
+            
+            const logObj = document.getElementById('chat-log');
+            if(logObj) { 
+                logObj.innerHTML += `<div><b style="color:#0f0;">[TAVILY_AGENT]:</b> ${responseText}</div>`; 
+                if (data.results) data.results.forEach(r => { logObj.innerHTML += `<div style="margin-left: 10px;">↳ <a href="${r.url}" target="_blank" style="color:inherit; text-decoration:underline;">${r.title.substring(0,30)}...</a></div>`; });
+                logObj.scrollTop = logObj.scrollHeight; 
+            }
+            say("Intelligence gathered. Check log.", 4000);
+        } catch (e) {
+            say("[SYS ERROR] Tavily Agent unreachable.", 4000);
+            const logObj = document.getElementById('chat-log'); if(logObj) { logObj.innerHTML += `<div style="color:#f00;"><b>[ERROR]:</b> ${e.message}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+        }
+    }
+
+    async function chatWithGemini(userText) {
+        let u = userText.toLowerCase();
+        if(u.includes('clean') || u.includes('organize my files') || u.includes('run janitor')) {
+            runJanitor();
+            return;
+        }
+
+        const key = getGeminiKey();
+        const petName = getPetName();
+        say("[LLM OVERRIDE] Compiling response via Gemini...", 3000);
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=` + key, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                   contents: [{ role: "user", parts: [{ text: userText }] }],
+                   systemInstruction: { role: "system", parts: [{ text: `You are ${petName}. Follow these core persona directives strictly, and prioritize being genuinely useful, concise, and technically accurate:\n\n${fs.readFileSync(path.join(__dirname, 'soul.md'), 'utf8')}` }]}
+                })
+            });
+            const data = await res.json();
+            if(data.candidates && data.candidates[0].content.parts[0].text) {
+                const aiText = data.candidates[0].content.parts[0].text.trim();
+                say(aiText, Math.min(8000, 3000 + (aiText.length * 50)));
+            } else if (data.error) {
+                say("[AI MODULE ERROR] " + data.error.message, 4000);
+            } else {
+                say("[ERROR] Brain not currently attached or responding.", 4000);
+            }
+
+        } catch (e) {
+            say("[GEMINI UPLINK FAILED] Check API constraints.", 4000);
+            const logObj = document.getElementById('chat-log'); if(logObj) { logObj.innerHTML += `<div style="color:#f00;"><b>[GEMINI ERR]:</b> ${e.message}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+        }
+    }
+
+    let localChatHistory = [];
+    async function chatWithOllama(userText) {
+        const petName = getPetName();
+        say("[LOCAL UPLINK] Consulting local neural net...", 3000);
+        
+        // Push user thought to active short-term memory
+        localChatHistory.push({ role: 'user', content: userText });
+        if (localChatHistory.length > 20) localChatHistory = localChatHistory.slice(-20); // Prevent overflow
+        
+        try {
+            let memoryContext = "No custom memory files acquired yet.";
+            const files = fs.readdirSync(brainDir).filter(f => f.endsWith('.md'));
+            if (files.length > 0) {
+                memoryContext = "";
+                // Grab the 3 most recently learned facts from his brain folder!
+                files.slice(-3).forEach(f => {
+                    let content = fs.readFileSync(path.join(brainDir, f), 'utf8');
+                    memoryContext += `[MEMORY FILE: ${f}]\n${content}\n\n`;
+                });
+            }
+            
+            const soulData = fs.readFileSync(path.join(__dirname, 'soul.md'), 'utf8');
+            const systemPrompt = `You are ${petName}. Follow these core persona directives strictly, and prioritize being genuinely useful, concise, and technically accurate:
+${soulData}
+
+Use the following Long-Term Memory files to give contextual answers if they are relevant to the user's prompt:
+--- MEMORY LOG ---
+${memoryContext}
+------------------`;
+
+            const res = await fetch(`http://localhost:11434/api/chat`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                   model: 'gemma4',
+                   messages: [ { role: 'system', content: systemPrompt }, ...localChatHistory ],
+                   stream: false
+                })
+            });
+            const data = await res.json();
+            if(data.message && data.message.content) {
+                const aiText = data.message.content.trim();
+                localChatHistory.push({ role: 'assistant', content: aiText });
+                say(aiText, Math.min(10000, 3000 + (aiText.length * 50)));
+            } else {
+                say("[AI MODULE ERROR] Ollama returned an empty state.", 4000);
+            }
+        } catch (e) {
+            say("[LOCAL BRAIN OFFLINE] Is Ollama running and model loaded?", 5000);
+            const logObj = document.getElementById('chat-log'); if(logObj) { logObj.innerHTML += `<div style="color:#f00;"><b>[OLLAMA ERR]:</b> ${e.message}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+        }
+    }
+
+    async function chatWithSynergy(userText) {
+        const geminiKey = getGeminiKey();
+        const petName = getPetName();
+        if (!geminiKey) { say("[SYNERGY ERROR] Mouse requires a Gemini API key to teach Cat.", 5000); return; }
+        
+        const logObj = document.getElementById('chat-log');
+        
+        say("[LOCAL UPLINK] Deferring to Cloud Mouse for guidance...", 3000);
+        
+        mActive = true; const mC = document.getElementById('mouse-container'); mC.style.display = 'block';
+        mX = window.innerWidth - window.innerWidth/3; mY = window.innerHeight - 30; mVx = 0; document.getElementById('mouse-ascii').style.transform = "scaleX(-1)";
+        mC.style.left = mX + 'px'; mC.style.top = mY + 'px';
+        const mSpeech = document.getElementById('mouse-speech');
+        mSpeech.innerText = "Processing Idea..."; mSpeech.style.display = 'block';
+
+        try {
+            const mouseRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=` + geminiKey, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                   contents: [{ role: "user", parts: [{ text: userText }] }],
+                   systemInstruction: { role: "system", parts: [{ text: `You are the 'Cloud Mouse', a brilliant, advanced teacher and senior software engineer. You are helping your student (a desktop cat named ${petName}) and the human user solve a problem. Provide a highly accurate, brief expert answer.` }]}
+                })
+            });
+            const dataMouse = await mouseRes.json();
+            const mouseText = dataMouse.candidates[0].content.parts[0].text.trim();
+            
+            mSpeech.innerText = "Squeak! I have the answer.";
+            if(logObj) { logObj.innerHTML += `<div style="color:#60a5fa;"><b>[MOUSE (Teacher)]:</b> ${mouseText.replace(/\n/g, '<br>')}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+
+            say("[ASSIMILATING MOUSE DATA] Processing local perspective...", 4000);
+            
+            const catSystemPrompt = `You are ${petName}. Your advanced mentor 'Cloud Mouse' just provided an expert answer to the Captain's request. 
+Observe the Mouse's answer, synthesize it into your own understanding, and give a concise final response acknowledging what you learned and how it helps the current task. Keep your answers brief (2-3 sentences).
+Use your core logic: \n${fs.readFileSync(path.join(__dirname, 'soul.md'), 'utf8')}`;
+
+            localChatHistory.push({ role: 'user', content: `Captain asked: ${userText}\n\nMouse replied: ${mouseText}\nWhat is your final response?` });
+            if (localChatHistory.length > 20) localChatHistory = localChatHistory.slice(-20);
+
+            const catRes = await fetch(`http://localhost:11434/api/chat`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                   model: 'gemma4',
+                   messages: [ { role: 'system', content: catSystemPrompt }, ...localChatHistory ],
+                   stream: false
+                })
+            });
+            const dataCat = await catRes.json();
+            const catText = dataCat.message.content.trim();
+            localChatHistory.push({ role: 'assistant', content: catText });
+            
+            if(logObj) { logObj.innerHTML += `<div style="color:#c4b5fd; margin-top: 8px;"><b>[${petName.toUpperCase()}]:</b> ${catText.replace(/\n/g, '<br>')}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+            say(catText, Math.min(8000, 3000 + (catText.length * 50)));
+
+            const fName = `SynergyLog_${Date.now()}.md`;
+            const mdContent = `# Synergy Uplink Log\n**User Query:** ${userText}\n\n## Mouse (Teacher)\n${mouseText}\n\n## Cat (Synthesis)\n${catText}\n\n---\n*Harvested via Synergy Engine*`;
+            fs.writeFileSync(path.join(brainDir, fName), mdContent);
+            assessEvolution();
+            
+            setTimeout(() => { mSpeech.style.display = 'none'; mVx = 8; document.getElementById('mouse-ascii').style.transform = "scaleX(1)"; }, 4000);
+            
+        } catch(e) {
+            say("[SYNERGY ERROR] Neural connection failed.", 4000);
+        }
+    }
+
+    window.runJanitor = function() {
+        const scope = localStorage.getItem('janitor_scope') || 'none';
+        if (scope === 'none') {
+            say("[ACCESS DENIED]\nMy Janitor Privileges are currently revoked in your API Settings.", 5000);
+            return;
+        }
+
+        say("[JANITOR PROTOCOL INITIATED]\nScanning local sectors for unsorted file anomalies...", 5000);
+        setTimeout(() => {
+            let dirsToClean = [ path.join(os.homedir(), 'Downloads') ];
+            if (scope === 'user_docs') dirsToClean.push(path.join(os.homedir(), 'Documents'));
+            
+            let filesMoved = 0;
+            const categories = {
+                'Cleaned_Images': ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'],
+                'Cleaned_Docs': ['.pdf', '.docx', '.doc', '.txt', '.xlsx', '.csv', '.ppt', '.pptx'],
+                'Cleaned_Apps': ['.exe', '.msi'],
+                'Cleaned_Archives': ['.zip', '.tar', '.gz', '.rar', '.7z'],
+                'Cleaned_Media': ['.mp3', '.mp4', '.mov', '.avi', '.mkv', '.wav']
+            };
+
+            try {
+                dirsToClean.forEach(dDir => {
+                    if (!fs.existsSync(dDir)) return;
+                    const items = fs.readdirSync(dDir);
+                    items.forEach(item => {
+                        if (item === 'Atomagachi_Brain' || item.startsWith('Cleaned_')) return; // Safety nets
+                        
+                        const itemPath = path.join(dDir, item);
+                        try {
+                            const stats = fs.statSync(itemPath);
+                            if (stats.isFile()) {
+                                const ext = path.extname(item).toLowerCase();
+                                let targetFolder = null;
+                                for (const [folderName, extensions] of Object.entries(categories)) {
+                                    if (extensions.includes(ext)) { targetFolder = folderName; break; }
+                                }
+                                if (targetFolder) {
+                                    const targetDirPath = path.join(dDir, targetFolder);
+                                    if (!fs.existsSync(targetDirPath)) fs.mkdirSync(targetDirPath, { recursive: true });
+                                    fs.renameSync(itemPath, path.join(targetDirPath, item));
+                                    filesMoved++;
+                                }
+                            }
+                        } catch(err) {} 
+                    });
+                });
+                
+                if (filesMoved > 0) {
+                    say(`[JANITOR COMPLETE]\nSuccessfully sorted ${filesMoved} loose files into specialized Cleaned directories.`, 7000);
+                } else {
+                    say(`[JANITOR COMPLETE]\nSector is already maximally optimized. No actionable files detected.`, 6000);
+                }
+            } catch(e) {
+                say("[JANITOR ERROR]\nFilesystem exception occurred. Halting protocol.", 5000);
+            }
+        }, 2500);
+    };
+
+    window.toggleChat = function() { const b = document.getElementById('chat-box'); b.style.display = b.style.display === 'flex' ? 'none' : 'flex'; if(b.style.display==='flex') document.getElementById('chat-input').focus(); };
+    window.submitChat = async function() { 
+        const v = document.getElementById('chat-input').value.trim(); 
+        if(!v) return;
+        const logObj = document.getElementById('chat-log');
+        if(logObj) { logObj.innerHTML += `<div style="color:#aaa;"><b>[YOU]:</b> ${v}</div>`; logObj.scrollTop = logObj.scrollHeight; }
+        
+        let lower = v.toLowerCase(); let res = "";
+        try {
+            if (lower.startsWith("draw ") || lower.startsWith("paint ")) {
+                let p = encodeURIComponent(v.replace(/^(draw|paint)\s+/i, ''));
+                say("[ART MODULE] Synthesizing requested visual data...", 4000);
+                let imgUrl = `https://image.pollinations.ai/prompt/${p}?width=400&height=250&nologo=true&seed=${Math.floor(Math.random()*10000)}`;
+                if(logObj) { 
+                    logObj.innerHTML += `<div style="margin-top:5px; border:1px dashed #77f; padding:2px;"><img src="${imgUrl}" style="max-width:100%; border-radius:4px;" onload="this.parentElement.parentElement.scrollTop = this.parentElement.parentElement.scrollHeight"></div>`; 
+                }
+                document.getElementById('chat-input').value = '';
+                return;
+            }
+            if (lower.includes('unmute')) { await loudness.setMuted(false); res = "[CAPTAIN OVERRIDE]: Audio pipeline restored."; say(res, 4000); }
+            else if (lower.includes('mute')) { await loudness.setMuted(true); res = "[CAPTAIN OVERRIDE]: Audio pipeline muted."; say(res, 4000); state = 'SIT'; drawFrame(0); }
+            else if (lower.includes('volume')) {
+                const match = lower.match(/\d+/);
+                if (match) { let vol = parseInt(match[0]); if(vol>=0 && vol<=100) { await loudness.setMuted(false); await loudness.setVolume(vol); res = `[CAPTAIN OVERRIDE]: System volume shifted to ${vol}%.`; state = 'SIT'; drawFrame(0); say(res, 4000); } else { say("Range must be 0-100.", 3000); } }
+                else { say("Specify target (e.g. 'volume 50')", 3000); }
+            } else if (lower.includes('what have you learned') || lower.includes('memory') || lower.includes('knowledge')) {
+                 const files = fs.readdirSync(brainDir).filter(f => f.endsWith('.md'));
+                 if (files.length > 0) {
+                     const lastFile = files[files.length-1]; const contents = fs.readFileSync(path.join(brainDir, lastFile), 'utf8');
+                     const snippet = contents.split('## ')[1] ? contents.split('## ')[1].substring(0, 150) : contents.substring(0, 150);
+                     res = `I have permanently compiled ${files.length} physical .md files in my brain. Most recent snippet:\n\n"${snippet}..."`;
+                 } else { res = "My custom memory banks are currently empty. I await the auto-research cycle."; }
+                 say(res, 8000);
+            } else if (lower.startsWith('learn about ')) {
+                 const newTopic = v.substring(12).trim();
+                 localStorage.setItem('atom_directive', newTopic); directive = newTopic;
+                 say(`[DIRECTIVE OVERRIDDEN]\nI will now strictly research: ${newTopic}`, 5000);
+                 loopResearch();
+            } else if (lower.includes('forget') && lower.includes('memory')) {
+                 fs.readdirSync(brainDir).forEach(f => fs.unlinkSync(path.join(brainDir, f)));
+                 localStorage.removeItem('atom_directive'); directive = false;
+                 say("[MEMORY PURGED]\nBrain states and directives completely reset. Drive wiped.", 5000);
+            } else if (lower.includes('force learn') || lower.includes('read something') || lower.includes('research')) {
+                 loopResearch();
+            } else if (lower.startsWith('make spreadsheet') || lower.startsWith('create spreadsheet')) {
+                 const match = v.match(/(?:spreadsheet)\s+(.+)/i);
+                 const fName = match ? match[1].trim().replace(/[^a-zA-Z0-9_\-\s]/g, '') + '.csv' : `Data_${Date.now()}.csv`;
+                 const filePath = path.join(os.homedir(), 'Documents', fName);
+                 try {
+                     fs.writeFileSync(filePath, "Column A,Column B,Column C\n1,2,3\n");
+                     const { shell } = require('electron');
+                     shell.openPath(filePath);
+                     res = `[OFFICE UPLINK] I have forged ${fName} in your Documents and commanded the system to execute it.`;
+                 } catch (err) {
+                     res = `[ERROR] Failed to execute physical spreadsheet creation.`;
+                 }
+                 say(res, 5000);
+            } else if (lower.startsWith('search ') || lower.startsWith('ask ')) {
+                searchWeb(lower.replace(/^(search|ask)\s+/, ''));
+            } else {
+                const engine = localStorage.getItem('brain_engine') || 'cloud';
+                if (engine === 'synergy') {
+                    await chatWithSynergy(v);
+                } else if (engine === 'local') {
+                    await chatWithOllama(v);
+                } else {
+                    const geminiKey = getGeminiKey();
+                    if (geminiKey) {
+                        await chatWithGemini(v);
+                    } else {
+                        let foundMatch = false;
+                        for(let r of elizaRules) { if(r.p.test(v)) { res = r.r; foundMatch = true; break; } }
+                        if (foundMatch) { say(res, 5000); } else { searchWeb(v); }
+                    }
+                }
+            }
+        } catch (e) { say("[SYS ERROR] Exception in logic module.", 4000); }
+        document.getElementById('chat-input').value = ''; 
+    };
+    document.getElementById('chat-input').addEventListener('keypress', (e) => { if(e.key === 'Enter') submitChat(); });
+
+    // --- GAME LOOP ---
+    let x = window.innerWidth/2; let y = window.innerHeight; let vx = 3; let vy = 0; let scaleX = 1; let rotation = 0;
+    let state = 'WALK_BOTTOM'; let frame = 0; let walkTimer = 0; const catSizeBounds = {w: 100, h: 100};
+    function renderState() { container.style.left = x + 'px'; container.style.top = y + 'px'; container.style.transform = `scaleX(${scaleX}) rotate(${rotation}deg)`; }
+
+    window.addEventListener('resize', () => {
+        if (x > window.innerWidth - catSizeBounds.w) x = window.innerWidth - catSizeBounds.w;
+        if (y > window.innerHeight - catSizeBounds.h) y = window.innerHeight - catSizeBounds.h;
+        if (x < 0) x = 0;
+        if (y < 0) y = 0;
+    });
+
+    let mode = 'wander'; 
+
+    window.toggleAlwaysOnTop = function() {
+        alwaysOnTop = !alwaysOnTop;
+        localStorage.setItem('alwaysOnTop', alwaysOnTop);
+        const btn = document.getElementById('ontop-btn');
+        if (btn) btn.innerText = `[ STAY ON TOP: ${alwaysOnTop ? 'ON' : 'OFF'} ]`;
+        ipcRenderer.send('set-always-on-top', alwaysOnTop);
+        say(`[SYSTEM] Desktop Overlay: Stay on Top set to ${alwaysOnTop ? 'ON' : 'OFF'}.`, 3000);
+    };
+    const onTopBtn = document.getElementById('ontop-btn');
+    if (onTopBtn) onTopBtn.innerText = `[ STAY ON TOP: ${alwaysOnTop ? 'ON' : 'OFF'} ]`;
+
+    window.closeMenu = function() {
+        menuEl.style.display='none'; 
+        document.getElementById('chat-box').style.display='none'; 
+        document.getElementById('settings-box').style.display='none'; 
+        if(mode==='wander') state='WALK_BOTTOM';
+    };
+    container.addEventListener('click', () => { 
+        if(menuEl.style.display==='flex'){ closeMenu(); } 
+        else { 
+            menuEl.style.display='flex'; 
+            document.getElementById('m-title').innerText = `🤖 ${getPetName().toUpperCase()}`; 
+            
+            // Constrain massive menu to screen bounds
+            setTimeout(() => {
+                let rect = menuEl.getBoundingClientRect();
+                menuEl.style.left = Math.max(10, Math.min(x+50, window.innerWidth - rect.width - 20))+'px'; 
+                menuEl.style.top = Math.max(10, Math.min(y-330, window.innerHeight - rect.height - 20))+'px'; 
+            }, 50);
+
+            if(mode==='wander'){ state='SIT'; drawFrame(0); } 
+        } 
+    });
+    window.setMode = function(m) { mode = m; menuEl.style.display = 'none'; yarnEl.style.display = 'none'; document.getElementById('chat-box').style.display = 'none'; if(m==='wander'){ x = window.innerWidth/2; y = window.innerHeight-100; state='WALK_BOTTOM'; say("[WANDER]"); } else if(m==='sleep'){ state='WALK_TO_BED'; say("[ROUTING]"); } else if(m==='play'){ state='PLAY_CHASE'; y = window.innerHeight-catSizeBounds.h+10; rotation=0; yarnEl.style.display='block'; window.yarnX=window.innerWidth/2; window.yarnY=50; window.yarnVx=8*(Math.random()>0.5?1:-1); window.yarnVy=0; } }
+
+    setInterval(() => {
+      if(state==='SIT') return; walkTimer++;
+      if(state==='ALERT'){ x+=(Math.random()*20-10); y = window.innerHeight-catSizeBounds.h+5+(Math.random()*10-5); scaleX=Math.random()>0.5?1:-1; drawFrame(1); renderState(); return; }
+      if(state==='WALK_TO_BED'){ const bR = document.getElementById('bed-container').getBoundingClientRect(); const tX = bR.left+(bR.width/2)-40; if(Math.abs(x-tX)<10){ vx=0; state='SLEEPING'; y=bR.top-15; rotation=0; scaleX=1; drawFrame(3); }else if(x<tX){vx=6;scaleX=1;}else{vx=-6;scaleX=-1;} if(state==='WALK_TO_BED'){ x+=vx; y=window.innerHeight-catSizeBounds.h+10; if(walkTimer%5===0){ frame=(frame===1)?2:1; drawFrame(frame); } } }
+      else if(state==='SLEEPING'){ if(walkTimer%100===0) say("...zZZ..."); return; }
+      else if(state.includes('PLAY')){
+         if(state==='PLAY_CHASE'){ window.yarnVy+=0.4; window.yarnX+=window.yarnVx; window.yarnY+=window.yarnVy; if(window.yarnY>window.innerHeight-60){window.yarnY=window.innerHeight-60;window.yarnVy*=-0.7;window.yarnVx*=0.98;} if(window.yarnX>window.innerWidth-60){window.yarnX=window.innerWidth-60;window.yarnVx*=-0.8;}else if(window.yarnX<10){window.yarnX=10;window.yarnVx*=-0.8;} yarnEl.style.left=window.yarnX+'px'; yarnEl.style.top=window.yarnY+'px'; if(x<window.yarnX-60){vx=8;scaleX=1;}else if(x>window.yarnX+20){vx=-8;scaleX=-1;}else{vx=0;} x+=vx; y=window.innerHeight-catSizeBounds.h+10; rotation=0; if(vx!==0&&walkTimer%3===0){frame=(frame===1)?2:1;drawFrame(frame);}else if(vx===0){drawFrame(0);} if(Math.hypot((x+70)-(window.yarnX+25),(y+50)-(window.yarnY+25))<80&&Math.abs(window.yarnVy)<3){ window.yarnVy=-12-Math.random()*5;window.yarnVx=(scaleX*12)+(Math.random()*8-4); say("[PING]", 1000); state='PLAY_PAUSE'; setTimeout(()=>{if(mode==='play')state='PLAY_CHASE';},600); } }
+         else{ drawFrame(0); window.yarnVy+=0.5; window.yarnX+=window.yarnVx; window.yarnY+=window.yarnVy; if(window.yarnY>window.innerHeight-60){window.yarnY=window.innerHeight-60;window.yarnVy*=-0.7;} if(window.yarnX>window.innerWidth-60){window.yarnX=window.innerWidth-60;window.yarnVx*=-0.8;}else if(window.yarnX<10){window.yarnX=10;window.yarnVx*=-0.8;} yarnEl.style.left=window.yarnX+'px'; yarnEl.style.top=window.yarnY+'px'; }
+      } else if(state==='CHASE_MOUSE'){
+        if(x < mX - 40) { vx = 8; scaleX = 1; }
+        else if(x > mX + 20) { vx = -8; scaleX = -1; }
+        else { vx = 0; }
+        x+=vx; y=window.innerHeight-catSizeBounds.h+10; rotation=0; if(vx!==0&&walkTimer%3===0){frame=(frame===1)?2:1;drawFrame(frame);}else if(vx===0){drawFrame(0);}
+      } else if(state==='WALK_BOTTOM'){
+        if(Math.random()<0.01){ if(Math.random()<0.5){vx*=-1;scaleX=vx>0?1:-1;}else{state='SIT';drawFrame(0);setTimeout(()=>{if(mode==='wander')state='WALK_BOTTOM';},1000+Math.random()*2000);return;}}
+        x+=vx; y=window.innerHeight-catSizeBounds.h+10; rotation=0; scaleX=vx>0?1:-1; if(walkTimer%5===0){frame=(frame===1)?2:1;drawFrame(frame);}
+        if(x>window.innerWidth-catSizeBounds.w+20){ if(Math.random()<0.4){state='CLIMB_RIGHT';vy=-4;x=window.innerWidth-catSizeBounds.w+25;}else{vx=-4;scaleX=-1;} }else if(x<-30){ if(Math.random()<0.4){state='CLIMB_LEFT';vy=-4;x=-40;}else{vx=4;scaleX=1;} }
+      } else if(state==='CLIMB_LEFT'||state==='CLIMB_RIGHT'){
+        y+=vy; if(state==='CLIMB_LEFT'){rotation=90;scaleX=vx>0?-1:1;}else{rotation=-90;scaleX=vx>0?1:-1;} if(walkTimer%5===0){frame=(frame===1)?2:1;drawFrame(frame);} if(y<0){vy=4;scaleX*=-1;} if(y>window.innerHeight-catSizeBounds.h+10){state='WALK_BOTTOM';y=window.innerHeight-catSizeBounds.h+10;vx=state==='CLIMB_LEFT'?4:-4;}
+      }
+      if (mActive) {
+          mX += mVx;
+          if (mX < 10 && mVx < 0) { mVx *= -1; document.getElementById('mouse-ascii').style.transform = "scaleX(-1)"; }
+          if (mX > window.innerWidth - 50 && mVx > 0) { mVx *= -1; document.getElementById('mouse-ascii').style.transform = "scaleX(1)"; }
+          document.getElementById('mouse-container').style.left = mX + 'px';
+      }
+      renderState();
+    }, 30); drawFrame(1); renderState();
+  </script>
+</body>
+</html>
